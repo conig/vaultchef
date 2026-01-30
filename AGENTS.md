@@ -24,23 +24,28 @@ Scaling and shopping lists can be added later without changing the authoring for
 ## Concepts
 
 ### Vault (user-managed)
+
 A folder containing the user’s Markdown notes.
 The user edits content here via Obsidian, obsidian.nvim, or any editor.
 
 ### Project (tool-managed)
+
 A folder containing vaultchef templates, filters, build outputs, and cache.
 A single vault can be rendered by multiple projects (different styles or audiences).
 
 ### Cookbook note
+
 A Markdown note that acts as the table of contents.
 It contains chapters and Obsidian embeds that reference recipe notes.
 
 ### Recipe note
+
 A Markdown note with YAML frontmatter plus standard sections for ingredients and method.
 
 ## Directory structure
 
 ### Example vault
+
 ```
 Vault/
   Recipes/
@@ -52,6 +57,7 @@ Vault/
 ```
 
 ### Example project
+
 ```
 CookbookProject/
   vaultchef.toml
@@ -74,10 +80,13 @@ vaultchef uses a global user config that points to the vault location and defaul
 Per-project configuration controls style, templates, and build outputs.
 
 ### Global config
+
 Path:
+
 - `~/.config/vaultchef/config.toml`
 
 Example:
+
 ```toml
 vault = "/home/james/Obsidian/Vault"
 recipes_dir = "Recipes"
@@ -95,10 +104,13 @@ style_dir = "~/.config/vaultchef/templates"
 ```
 
 ### Per-project config
+
 Path:
+
 - `<project>/vaultchef.toml`
 
 Example:
+
 ```toml
 build_dir = "build"
 cache_dir = "cache"
@@ -126,6 +138,7 @@ vaultchef supports user-owned templates stored under the user config directory, 
 This is optional. Defaults live in the project (or bundled with vaultchef).
 
 Guidelines:
+
 - Do not store templates in the vault.
 - Prefer user templates for fonts and typography that are specific to the machine.
 - Keep macro names and the macro contract stable to avoid breaking the Lua filter.
@@ -138,6 +151,7 @@ Guidelines:
 The Lua filter should emit semantic macros, and the template should implement their visual appearance.
 
 ### Precedence rules
+
 Highest wins:
 
 1. CLI flags
@@ -146,16 +160,20 @@ Highest wins:
 4. Built-in defaults
 
 ### Suggested profiles (optional)
+
 If multiple projects exist, optional profiles can be stored at:
+
 - `~/.config/vaultchef/projects.d/*.toml`
 
 Example:
 `~/.config/vaultchef/projects.d/gift.toml`
+
 ```toml
 project = "/home/james/CookbookGiftProject"
 ```
 
 Usage:
+
 ```bash
 vaultchef build "Family Cookbook" --profile gift
 ```
@@ -167,10 +185,12 @@ vaultchef build "Family Cookbook" --profile gift
 Recipe notes are plain Markdown with YAML frontmatter.
 
 Required frontmatter keys:
+
 - `recipe_id` (string or integer)
 - `title` (string)
 
 Recommended frontmatter keys:
+
 - `course` (string, example `dessert`, `main`, `side`, `snack`)
 - `category` (string)
 - `cuisine` (string)
@@ -187,22 +207,27 @@ Recommended frontmatter keys:
 - `source` (string)
 
 Notes:
+
 - YAML frontmatter metadata is Obsidian-friendly and safe to add.
 - Keep metadata flat and typed (booleans for flags, numbers for ratings).
 - Unknown keys must not break the build. vaultchef should ignore what it does not understand.
 
 Required sections:
+
 - `## Ingredients`
 - `## Method`
 
 Optional sections:
+
 - `## Notes`
 
 Ingredient subsections can be created with headings under Ingredients:
+
 - `### Filling`
 - `### Sauce`
 
 Example:
+
 ```markdown
 ---
 recipe_id: 116
@@ -229,19 +254,23 @@ source: Ottolenghi
 ---
 
 ## Ingredients
+
 - 200 g plain flour
 - 120 g unsalted butter, cold, cubed
 
 ### Filling
+
 - 4 eggs
 - 200 g caster sugar
 
 ## Method
+
 1. Make the dough.
 2. Blind bake the shell.
 3. Bake filling until just set.
 
 ## Notes
+
 - Serve with whipped cream.
 ```
 
@@ -253,6 +282,7 @@ Embeds use Obsidian transclusion syntax:
 - `![[Recipes/116 Lemon Tart]]`
 
 Example:
+
 ```markdown
 ---
 title: Family Cookbook
@@ -262,10 +292,12 @@ style: menu-card
 ---
 
 # Desserts
+
 ![[Recipes/116 Lemon Tart]]
 ![[Recipes/118 Anzac Biscuits]]
 
 # Mains
+
 ![[Recipes/205 Saag Paneer]]
 ```
 
@@ -274,26 +306,31 @@ style: menu-card
 ### Common commands
 
 Build a cookbook:
+
 ```bash
 vaultchef build "Family Cookbook"
 ```
 
 Build and open the PDF:
+
 ```bash
 vaultchef build "Family Cookbook" --open
 ```
 
 Watch for changes and rebuild:
+
 ```bash
 vaultchef watch "Family Cookbook"
 ```
 
 Create a new recipe note from a template:
+
 ```bash
 vaultchef new --id 116 --title "Lemon Tart" --category Desserts
 ```
 
 List recipes:
+
 ```bash
 vaultchef list
 vaultchef list --tag dessert
@@ -301,6 +338,7 @@ vaultchef list --category Desserts
 ```
 
 Override locations:
+
 ```bash
 vaultchef build "Family Cookbook" --vault ~/Obsidian/Vault --project ~/CookbookProject
 ```
@@ -319,6 +357,7 @@ All outputs go into the project build directory.
 No generated file should be written into the vault.
 
 ### Exit codes (recommended)
+
 - `0` success
 - `1` generic failure
 - `2` config error
@@ -330,10 +369,12 @@ No generated file should be written into the vault.
 ## Build pipeline
 
 ### Stage 1: Resolve cookbook note
+
 - Locate cookbook note in: `$vault/$cookbooks_dir/<name>.md`
 - Parse YAML frontmatter if present.
 
 ### Stage 2: Expand embeds
+
 - Replace every `![[...]]` with the embedded file content.
 - Support both:
   - `![[Recipes/116 Lemon Tart]]`
@@ -343,35 +384,43 @@ No generated file should be written into the vault.
   - heading embeds `![[note#Heading]]`
 
 Embed expansion should:
+
 - preserve chapter headings in the cookbook note
 - ensure each embedded recipe starts at a predictable boundary
 
 ### Stage 3: Normalise and validate recipes
+
 Recipe validation rules in v1:
+
 - frontmatter includes `recipe_id` and `title`
 - sections include `## Ingredients` and `## Method`
 - ingredients contain at least one bullet item
 - method contains at least one ordered item
 
 Metadata rules in v1:
+
 - accept arbitrary additional YAML keys
 - ignore unknown keys (no failure)
 - avoid strict typing enforcement (warn only in verbose mode)
 
 ### Stage 4: Convert with Pandoc
+
 Pandoc runs on the baked Markdown.
 
 Recommended approach:
+
 - Use a Lua filter to identify recipe units and emit structured output for LaTeX macros.
 - Use a LaTeX template and a style file that implement the menu-card aesthetic.
 
 ### Stage 5: LaTeX engine to PDF
+
 Default engine: `lualatex`
 Alternatives: `xelatex`
 
 ## Styling and semantics
 
 The visual identity aims for:
+
 - menu-style headers
 - recipe cards
 - dense but readable ingredient lists
@@ -379,6 +428,7 @@ The visual identity aims for:
 - optional notes in a shaded panel
 
 Recommended macro concepts in `recipe.sty`:
+
 - `\RecipeCard{title}{menu}{meta}{ingredients}{method}{notes}`
 - `\RecipeMeta{serves}{prep}{cook}{rest}{total}`
 - two-column layout for ingredients and method where possible
@@ -390,6 +440,7 @@ Caching is allowed only in the project cache directory.
 No cache files in the vault.
 
 Watch mode should:
+
 - watch the cookbook note
 - watch all referenced recipes
 - rebuild on changes
@@ -398,6 +449,7 @@ Watch mode should:
 ## Implementation notes for agents
 
 ### Minimal viable implementation strategy
+
 1. Implement config loading with precedence rules.
 2. Implement cookbook note lookup and embed expansion.
 3. Write baked Markdown to build dir.
@@ -406,6 +458,7 @@ Watch mode should:
 6. Add watch mode.
 
 ### Suggested language choices
+
 - Python is a good fit for fast iteration.
 - Go is a good fit for a single static binary.
 
@@ -413,15 +466,18 @@ Either is fine.
 The project should keep the authoring format stable.
 
 ### Parsing guidance
+
 - Use a real YAML frontmatter parser.
 - Keep Markdown parsing minimal until pandoc stage.
 - Trust pandoc for most Markdown normalization.
 
 ### Logging guidance
+
 - Print friendly errors that name the file and the failing rule.
 - Provide a `--verbose` flag that prints command lines and pandoc output.
 
 ### Security and safety
+
 - Treat vault files as untrusted input.
 - Avoid shell injection by invoking pandoc with argument arrays.
 - Never execute arbitrary code from notes.
@@ -429,6 +485,7 @@ The project should keep the authoring format stable.
 ## Testing
 
 Recommended tests:
+
 - embed expansion for simple paths
 - embed expansion for nested embeds
 - validation of required frontmatter and sections
@@ -438,10 +495,12 @@ Recommended tests:
 ## Developer experience
 
 ### Local development
+
 - A `fixtures/` vault with 2 to 3 recipes and one cookbook note.
 - A `make build` or `just build` command that runs the CLI locally.
 
 ### Release
+
 - Versioned binary or package
 - Keep templates versioned with the project, not the vault
 - Support multiple projects for different cookbook styles
@@ -461,6 +520,26 @@ Recommended tests:
 - All generated artifacts and caches live in the project directory.
 - Authoring stays plain Markdown with YAML frontmatter.
 - The cookbook note stays readable inside Obsidian and Neovim.
+
+## Interactive mode
+
+Vault chef includes an interactive mode for cookbook building and building.
+
+# Features
+
+trigger with --tui
+
+User is given two options: create a cookbook or build a cookbook.
+
+If they choose create they first choose a cookbook name, then are given the list of all recipes, they can /filter by all unique tags (e.g., gluten free, vegetarian, desert, drink, main, side).
+
+Every time they press enter on a recipe it's added into a new cookbook.
+
+When it's finalised vaultchef writes it into the cookbook dir of the vault.
+
+Build mode is simpler, they just fuzzy find a cookbook from all possible cookbooks and then it builds it in the current working directory.
+
+This mode is very pretty and snappy, an extremely polished TUI experience.
 
 ## Quick start
 
