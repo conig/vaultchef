@@ -9,13 +9,19 @@ from .paths import resolve_project_paths
 from .errors import PandocError
 
 
-def run_pandoc(input_md: str, output_pdf: str, cfg: EffectiveConfig, verbose: bool) -> None:
+def run_pandoc(
+    input_md: str,
+    output_pdf: str,
+    cfg: EffectiveConfig,
+    verbose: bool,
+    extra_metadata: dict[str, str] | None = None,
+) -> None:
     paths = resolve_project_paths(cfg)
     output_dir = Path(output_pdf).parent
     texmf_cache = output_dir
     texmf_var = output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    cmd = [
+    cmd: list[str] = [
         cfg.pandoc.pandoc_path,
         str(input_md),
         "-o",
@@ -31,6 +37,9 @@ def run_pandoc(input_md: str, output_pdf: str, cfg: EffectiveConfig, verbose: bo
         "--resource-path",
         str(paths.style_dir),
     ]
+    if extra_metadata:
+        for key, value in extra_metadata.items():
+            cmd.extend(["--metadata", f"{key}={value}"])
     if verbose:
         print(" ".join(cmd))
     env = os.environ.copy()

@@ -37,6 +37,29 @@ def render_cookbook_template(title: str, **kwargs: Any) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_cookbook_note(
+    title: str,
+    embeds: list[str],
+    subtitle: str | None = None,
+    author: str | None = None,
+    style: str | None = None,
+) -> str:
+    lines = ["---", f"title: {title}"]
+    if subtitle:
+        lines.append(f"subtitle: {subtitle}")
+    if author:
+        lines.append(f"author: {author}")
+    if style:
+        lines.append(f"style: {style}")
+    lines.append("---")
+    lines.append("")
+    lines.append("# Recipes")
+    for embed in embeds:
+        lines.append(f"![[{embed}]]")
+    lines.append("")
+    return "\n".join(lines) + "\n"
+
+
 def write_template_file(content: str, filename: str, cwd: str) -> str:
     path = Path(cwd) / filename
     if path.exists():

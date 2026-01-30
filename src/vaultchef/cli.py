@@ -28,6 +28,8 @@ from .watch import watch_cookbook
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
+    if args.tui:
+        return _cmd_tui(args)
     if not args.command:
         parser.print_help()
         return 1
@@ -60,41 +62,38 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="vaultchef")
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--vault", dest="vault_path")
+    common.add_argument("--project")
+    common.add_argument("--profile")
+    common.add_argument("--pandoc", dest="pandoc_path")
+    common.add_argument("--pdf-engine", dest="pdf_engine")
+    common.add_argument("--template")
+    common.add_argument("--lua-filter", dest="lua_filter")
+    common.add_argument("--style-dir", dest="style_dir")
+    common.add_argument("--theme")
+    common.add_argument("--recipes-dir")
+    common.add_argument("--cookbooks-dir")
+    common.add_argument("--build-dir")
+    common.add_argument("--cache-dir")
+
+    parser = argparse.ArgumentParser(prog="vaultchef", parents=[common])
+    parser.add_argument("--tui", action="store_true", help="Launch interactive TUI")
     sub = parser.add_subparsers(dest="command")
 
-    build = sub.add_parser("build")
+    build = sub.add_parser("build", parents=[common])
     build.add_argument("cookbook_name")
-    build.add_argument("--vault", dest="vault_path")
-    build.add_argument("--project")
-    build.add_argument("--profile")
     build.add_argument("--open", action="store_true")
     build.add_argument("--dry-run", action="store_true")
-    build.add_argument("--pandoc", dest="pandoc_path")
-    build.add_argument("--pdf-engine", dest="pdf_engine")
-    build.add_argument("--template")
-    build.add_argument("--lua-filter", dest="lua_filter")
-    build.add_argument("--style-dir", dest="style_dir")
-    build.add_argument("--theme")
-    build.add_argument("--recipes-dir")
-    build.add_argument("--cookbooks-dir")
-    build.add_argument("--build-dir")
-    build.add_argument("--cache-dir")
     build.add_argument("--verbose", action="store_true")
 
-    listing = sub.add_parser("list")
-    listing.add_argument("--vault", dest="vault_path")
-    listing.add_argument("--project")
-    listing.add_argument("--profile")
+    listing = sub.add_parser("list", parents=[common])
     listing.add_argument("--tag")
     listing.add_argument("--category")
     listing.add_argument("--json", action="store_true")
 
-    watch = sub.add_parser("watch")
+    watch = sub.add_parser("watch", parents=[common])
     watch.add_argument("cookbook_name")
-    watch.add_argument("--vault", dest="vault_path")
-    watch.add_argument("--project")
-    watch.add_argument("--profile")
     watch.add_argument("--debounce", type=int, default=400)
     watch.add_argument("--verbose", action="store_true")
 
@@ -121,20 +120,7 @@ def _build_parser() -> argparse.ArgumentParser:
     init.add_argument("path", nargs="?", default=".")
     init.add_argument("--force", action="store_true")
 
-    config = sub.add_parser("config")
-    config.add_argument("--vault", dest="vault_path")
-    config.add_argument("--project")
-    config.add_argument("--profile")
-    config.add_argument("--recipes-dir")
-    config.add_argument("--cookbooks-dir")
-    config.add_argument("--build-dir")
-    config.add_argument("--cache-dir")
-    config.add_argument("--pandoc", dest="pandoc_path")
-    config.add_argument("--pdf-engine", dest="pdf_engine")
-    config.add_argument("--template")
-    config.add_argument("--lua-filter", dest="lua_filter")
-    config.add_argument("--style-dir", dest="style_dir")
-    config.add_argument("--theme")
+    config = sub.add_parser("config", parents=[common])
 
     return parser
 
@@ -216,6 +202,12 @@ def _cmd_config(args: argparse.Namespace) -> int:
     cfg = resolve_config(_cli_args_dict(args))
     print(config_to_toml(cfg))
     return 0
+
+
+def _cmd_tui(args: argparse.Namespace) -> int:
+    from .tui import run_tui
+
+    return run_tui(_cli_args_dict(args))
 
 
 def _ensure_dir(root: str, name: str) -> None:

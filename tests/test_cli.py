@@ -13,6 +13,11 @@ def test_cli_no_command() -> None:
     assert cli.main([]) == 1
 
 
+def test_cli_tui_flag(monkeypatch) -> None:
+    monkeypatch.setattr("vaultchef.cli._cmd_tui", lambda *a, **k: 0)
+    assert cli.main(["--tui"]) == 0
+
+
 def test_cli_new_recipe(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     rc = cli.main(["new-recipe", "--id", "1", "--title", "Test"])

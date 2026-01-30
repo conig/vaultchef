@@ -6,6 +6,7 @@ import pytest
 from vaultchef.templates import (
     render_recipe_template,
     render_cookbook_template,
+    render_cookbook_note,
     write_template_file,
 )
 
@@ -22,6 +23,12 @@ def test_render_cookbook_template() -> None:
     assert "title: My Book" in text
     assert "subtitle: Sub" in text
     assert "![[Recipes/Example Recipe]]" in text
+
+
+def test_render_cookbook_note() -> None:
+    text = render_cookbook_note("My Book", ["Recipes/One", "Recipes/Two"])
+    assert "title: My Book" in text
+    assert "![[Recipes/One]]" in text
 
 
 def test_write_template_file(tmp_path: Path) -> None:

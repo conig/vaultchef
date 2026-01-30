@@ -1,9 +1,96 @@
 \documentclass[11pt]{article}
 \usepackage{geometry}
 \usepackage{hyperref}
+\usepackage{xcolor}
 \usepackage{recipe}
 \geometry{margin=1in}
 \providecommand{\tightlist}{}
+
+% Optional packages (graceful fallback if not installed).
+\IfFileExists{fontspec.sty}{
+  \usepackage{fontspec}
+}{}
+\IfFileExists{microtype.sty}{
+  \usepackage{microtype}
+}{}
+\IfFileExists{titlesec.sty}{
+  \usepackage{titlesec}
+}{}
+\IfFileExists{enumitem.sty}{
+  \usepackage{enumitem}
+}{}
+\IfFileExists{titling.sty}{
+  \usepackage{titling}
+}{}
+
+% Palette and typography for a fine-dining menu feel.
+\definecolor{VCink}{HTML}{1C1A17}
+\definecolor{VCaccent}{HTML}{9A7B4F}
+\definecolor{VCcream}{HTML}{F8F4EE}
+\pagecolor{VCcream}
+\color{VCink}
+
+\IfFileExists{fontspec.sty}{
+  \IfFontExistsTF{TeX Gyre Pagella}{
+    \setmainfont{TeX Gyre Pagella}
+  }{
+    \IfFontExistsTF{Latin Modern Roman}{\setmainfont{Latin Modern Roman}}{}
+  }
+  \IfFontExistsTF{TeX Gyre Heros}{
+    \setsansfont{TeX Gyre Heros}
+  }{
+    \IfFontExistsTF{Latin Modern Sans}{\setsansfont{Latin Modern Sans}}{}
+  }
+}{}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+\linespread{1.05}
+\setcounter{secnumdepth}{0}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=VCaccent,
+  urlcolor=VCaccent
+}
+
+\IfFileExists{titlesec.sty}{
+  \titleformat{\section}
+    {\Large\scshape\centering\color{VCaccent}}{}{0pt}{}
+  \titleformat{\subsection}
+    {\large\bfseries\centering}{}{0pt}{}
+  \titleformat{\subsubsection}
+    {\normalsize\scshape\centering}{}{0pt}{}
+
+  \titlespacing*{\section}{0pt}{1.2em}{0.6em}
+  \titlespacing*{\subsection}{0pt}{0.9em}{0.4em}
+  \titlespacing*{\subsubsection}{0pt}{0.8em}{0.3em}
+}{}
+
+\IfFileExists{enumitem.sty}{
+  \setlist[itemize]{leftmargin=*,label=\textbullet}
+  \setlist[enumerate]{leftmargin=*,label=\arabic*.}
+}{}
+
+% Center content on each page with generous white space.
+\newcommand{\VaultChefPageStart}{%
+  \vspace*{\fill}%
+  \centering%
+}
+\newcommand{\VaultChefPageEnd}{%
+  \par%
+  \vspace*{\fill}%
+}
+
+% Title styling.
+\IfFileExists{titling.sty}{
+  \pretitle{\begin{center}\Huge\scshape\color{VCink}}
+  \posttitle{\par\smallskip\textcolor{VCaccent}{\rule{0.25\textwidth}{0.6pt}}\end{center}}
+  \preauthor{\begin{center}\large\color{VCink}}
+  \postauthor{\end{center}}
+  \predate{\begin{center}\small\color{VCaccent}}
+  \postdate{\end{center}}
+}{}
 
 \title{$title$}
 $if(subtitle)$
@@ -14,10 +101,15 @@ $if(author)$
 $endif$
 
 \begin{document}
+\pagestyle{empty}
+\thispagestyle{empty}
+\VaultChefPageStart
 \maketitle
 $if(subtitle)$
 \begin{center}\subtitle\end{center}
 $endif$
+\VaultChefPageEnd
+\clearpage
 
 $body$
 

@@ -28,6 +28,7 @@ Outputs land in `./build/`.
 ## CLI
 
 ```bash
+vaultchef --tui
 vaultchef build "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME] [--open] [--dry-run]
 vaultchef list [--vault PATH] [--tag TAG] [--category CATEGORY] [--json]
 vaultchef watch "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME]
