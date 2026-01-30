@@ -113,6 +113,24 @@ class ModeScreen(Screen):
             yield Button("Build cookbook", id="build")
         yield Footer()
 
+    def on_mount(self) -> None:
+        self.query_one("#create", Button).focus()
+
+    def on_key(self, event) -> None:
+        if event.key in ("h", "left"):
+            self.query_one("#create", Button).focus()
+            event.stop()
+            return
+        if event.key in ("l", "right"):
+            self.query_one("#build", Button).focus()
+            event.stop()
+            return
+        if event.key in ("enter", "space"):
+            focused = self.app.focused
+            if isinstance(focused, Button) and hasattr(focused, "press"):
+                focused.press()
+                event.stop()
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "create":
             self.app.push_screen(CreateCookbookScreen())
@@ -151,6 +169,7 @@ class CreateCookbookScreen(Screen):
         self._refresh_tags()
         self._refresh_recipes()
         self._refresh_selected()
+        self.query_one("#name-input", Input).focus()
 
     def on_input_changed(self, event: Input.Changed) -> None:
         widget = getattr(event, "input", event.control)
@@ -170,6 +189,95 @@ class CreateCookbookScreen(Screen):
             self._select_tag(event.item)
         elif list_view.id == "recipe-list":
             self._toggle_recipe(event.item)
+
+    def on_key(self, event) -> None:
+        focused = self.app.focused
+        if event.key in ("tab",):
+            self._cycle_focus(1)
+            event.stop()
+            return
+        if event.key in ("shift+tab", "backtab"):
+            self._cycle_focus(-1)
+            event.stop()
+            return
+        if isinstance(focused, Input):
+            if focused.id == "search-input" and event.key in ("down", "up"):
+                delta = 1 if event.key == "down" else -1
+                self._move_highlight_in(self.query_one("#recipe-list", ListView), delta)
+                event.stop()
+            return
+        if event.key in ("down", "j"):
+            self._move_highlight(1)
+            event.stop()
+            return
+        if event.key in ("up", "k"):
+            self._move_highlight(-1)
+            event.stop()
+            return
+        if event.key in ("h", "left"):
+            self._cycle_focus(-1)
+            event.stop()
+            return
+        if event.key in ("l", "right"):
+            self._cycle_focus(1)
+            event.stop()
+            return
+        if event.key in ("enter", "space"):
+            self._activate_focused()
+            event.stop()
+
+    def _cycle_focus(self, direction: int) -> None:
+        order = [
+            self.query_one("#name-input", Input),
+            self.query_one("#tag-list", ListView),
+            self.query_one("#search-input", Input),
+            self.query_one("#recipe-list", ListView),
+            self.query_one("#selected-list", ListView),
+            self.query_one("#create", Button),
+            self.query_one("#back", Button),
+        ]
+        focused = self.app.focused
+        if focused in order:
+            idx = order.index(focused)
+            next_idx = (idx + direction) % len(order)
+        else:
+            next_idx = 0
+        order[next_idx].focus()
+
+    def _focused_list_view(self) -> Optional[ListView]:
+        focused = self.app.focused
+        if isinstance(focused, ListView):
+            return focused
+        return None
+
+    def _move_highlight(self, delta: int) -> None:
+        list_view = self._focused_list_view()
+        if not list_view:
+            return
+        self._move_highlight_in(list_view, delta)
+
+    def _move_highlight_in(self, list_view: ListView, delta: int) -> None:
+        try:
+            if delta > 0:
+                list_view.action_cursor_down()
+            else:
+                list_view.action_cursor_up()
+        except Exception:
+            pass
+
+    def _activate_focused(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, ListView):
+            item = _highlighted_item(focused)
+            if not item:
+                return
+            if focused.id == "tag-list":
+                self._select_tag(item)
+            elif focused.id == "recipe-list":
+                self._toggle_recipe(item)
+            return
+        if isinstance(focused, Button) and hasattr(focused, "press"):
+            focused.press()
 
     def _select_tag(self, item: ListItem) -> None:
         tag = getattr(item, "tag_value", None)
@@ -261,6 +369,7 @@ class BuildCookbookScreen(Screen):
 
     def on_mount(self) -> None:
         self._refresh_cookbooks()
+        self.query_one("#search-input", Input).focus()
 
     def on_input_changed(self, event: Input.Changed) -> None:
         widget = getattr(event, "input", event.control)
@@ -280,6 +389,89 @@ class BuildCookbookScreen(Screen):
             item = event.item
             self.selected = getattr(item, "cookbook", None)
             self._build_selected()
+
+    def on_key(self, event) -> None:
+        focused = self.app.focused
+        if event.key in ("tab",):
+            self._cycle_focus(1)
+            event.stop()
+            return
+        if event.key in ("shift+tab", "backtab"):
+            self._cycle_focus(-1)
+            event.stop()
+            return
+        if isinstance(focused, Input):
+            if event.key in ("down", "up"):
+                delta = 1 if event.key == "down" else -1
+                self._move_highlight_in(self.query_one("#cookbook-list", ListView), delta)
+                event.stop()
+            return
+        if event.key in ("down", "j"):
+            self._move_highlight(1)
+            event.stop()
+            return
+        if event.key in ("up", "k"):
+            self._move_highlight(-1)
+            event.stop()
+            return
+        if event.key in ("h", "left"):
+            self._cycle_focus(-1)
+            event.stop()
+            return
+        if event.key in ("l", "right"):
+            self._cycle_focus(1)
+            event.stop()
+            return
+        if event.key in ("enter", "space"):
+            self._activate_focused()
+            event.stop()
+
+    def _cycle_focus(self, direction: int) -> None:
+        order = [
+            self.query_one("#search-input", Input),
+            self.query_one("#cookbook-list", ListView),
+            self.query_one("#build", Button),
+            self.query_one("#back", Button),
+        ]
+        focused = self.app.focused
+        if focused in order:
+            idx = order.index(focused)
+            next_idx = (idx + direction) % len(order)
+        else:
+            next_idx = 0
+        order[next_idx].focus()
+
+    def _focused_list_view(self) -> Optional[ListView]:
+        focused = self.app.focused
+        if isinstance(focused, ListView):
+            return focused
+        return None
+
+    def _move_highlight(self, delta: int) -> None:
+        list_view = self._focused_list_view()
+        if not list_view:
+            return
+        self._move_highlight_in(list_view, delta)
+
+    def _move_highlight_in(self, list_view: ListView, delta: int) -> None:
+        try:
+            if delta > 0:
+                list_view.action_cursor_down()
+            else:
+                list_view.action_cursor_up()
+        except Exception:
+            pass
+
+    def _activate_focused(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, ListView):
+            item = _highlighted_item(focused)
+            if item:
+                self.selected = getattr(item, "cookbook", None)
+                self._build_selected()
+            return
+        if isinstance(focused, Button) and hasattr(focused, "press"):
+            focused.press()
 
     def _refresh_cookbooks(self) -> None:
         cookbooks = self.app.cookbooks
@@ -422,3 +614,15 @@ def _current_highlight(list_view: ListView) -> Optional[CookbookInfo]:
     if not item:
         return None
     return getattr(item, "cookbook", None)
+
+
+def _highlighted_item(list_view: ListView) -> Optional[ListItem]:
+    item = getattr(list_view, "highlighted_child", None)
+    if item is None:
+        highlighted = getattr(list_view, "highlighted", None)
+        if isinstance(highlighted, int) and highlighted >= 0:
+            try:
+                item = list_view.children[highlighted]
+            except Exception:
+                item = None
+    return item

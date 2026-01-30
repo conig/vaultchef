@@ -3,7 +3,7 @@
 vaultchef is a terminal-only cookbook builder that turns an Obsidian vault of Markdown recipe notes into a polished PDF that reads somewhere between a restaurant menu and a recipe book.
 
 The vault stays user-managed and clean.
-All build tooling, LaTeX templates, filters, caches, and outputs live outside the vault in a separate project directory.
+All build tooling, LaTeX templates, filters, and caches live outside the vault in a separate project directory. Intermediate build outputs live in the project build dir, while the final PDF is copied to the current working directory.
 
 ## Core promise
 
@@ -32,6 +32,10 @@ The user edits content here via Obsidian, obsidian.nvim, or any editor.
 
 A folder containing vaultchef templates, filters, build outputs, and cache.
 A single vault can be rendered by multiple projects (different styles or audiences).
+
+### Intermediates
+
+All intermediate files should be written into /tmp. Only the resultant PDF should appear in the working directory.
 
 ### Cookbook note
 
@@ -345,14 +349,16 @@ vaultchef build "Family Cookbook" --vault ~/Obsidian/Vault --project ~/CookbookP
 
 ### Outputs
 
-All outputs go into the project build directory.
+Intermediate outputs go into the project build directory, and the final PDF is copied to the current working directory.
 
 - `<build>/Family Cookbook.baked.md`
   - The cookbook note with embeds expanded into full Markdown.
 - `<build>/Family Cookbook.tex`
   - Optional intermediate for debugging LaTeX output.
 - `<build>/Family Cookbook.pdf`
-  - Final artifact.
+  - Intermediate PDF artifact (before copy).
+- `./Family Cookbook.pdf`
+  - Final artifact in the current working directory.
 
 No generated file should be written into the vault.
 

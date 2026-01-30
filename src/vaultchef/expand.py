@@ -11,7 +11,7 @@ from .errors import MissingFileError
 
 EMBED_RE = re.compile(r"!\[\[([^\]]+)\]\]")
 BOUNDARY = "\n\n<!-- vaultchef:recipe:start -->\n\n"
-FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
+FRONTMATTER_RE = re.compile(r"^\ufeff?---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
 
 
 def expand_cookbook(cookbook_path: str, vault_root: str) -> str:

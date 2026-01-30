@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
+import shutil
+
 import yaml
 
 from .config import EffectiveConfig
@@ -33,7 +36,7 @@ def build_cookbook(cookbook_name: str, cfg: EffectiveConfig, dry_run: bool, verb
         recipe_text = recipe_path.read_text(encoding="utf-8")
         validate_recipe(recipe_text, str(recipe_path))
 
-    cookbook_title = _parse_cookbook_title(cookbook_text)
+    cookbook_meta = _parse_cookbook_meta(cookbook_text)
     baked = expand_cookbook(str(cookbook_path), str(vault.vault_root))
 
     project.build_dir.mkdir(parents=True, exist_ok=True)
@@ -41,26 +44,36 @@ def build_cookbook(cookbook_name: str, cfg: EffectiveConfig, dry_run: bool, verb
     baked_path.write_text(baked, encoding="utf-8")
 
     pdf_path = project.build_dir / f"{cookbook_name}.pdf"
+    final_pdf_path = Path(os.getcwd()) / f"{cookbook_name}.pdf"
     if not dry_run:
-        extra_metadata: dict[str, str] = {}
-        if not cookbook_title:
+        extra_metadata = dict(cookbook_meta)
+        if not extra_metadata.get("title"):
             extra_metadata["title"] = cookbook_name
         run_pandoc(str(baked_path), str(pdf_path), cfg, verbose, extra_metadata=extra_metadata or None)
+        if pdf_path.resolve() != final_pdf_path.resolve():
+            shutil.copy2(pdf_path, final_pdf_path)
 
-    return BuildResult(baked_md=baked_path, pdf=pdf_path)
+    return BuildResult(baked_md=baked_path, pdf=final_pdf_path)
 
 
-def _parse_cookbook_title(text: str) -> str | None:
+def _parse_cookbook_meta(text: str) -> dict[str, str]:
     match = FRONTMATTER_RE.match(text)
     if not match:
-        return None
+        return {}
     try:
         data = yaml.safe_load(match.group(1)) or {}
     except yaml.YAMLError:
-        return None
+        return {}
     if not isinstance(data, dict):
-        return None
-    title = data.get("title")
-    if not title:
-        return None
-    return str(title)
+        return {}
+    meta: dict[str, str] = {}
+    for key in ("title", "subtitle", "author"):
+        value = data.get(key)
+        if value is None:
+            continue
+        if isinstance(value, list):
+            value = ", ".join(str(item) for item in value if item is not None)
+        text = str(value).strip()
+        if text:
+            meta[key] = text
+    return meta
