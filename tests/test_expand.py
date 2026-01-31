@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import pytest
 
-from vaultchef.expand import expand_cookbook, resolve_embed_path
+from vaultchef.expand import expand_cookbook, resolve_embed_path, expand_embed, _split_frontmatter
 from vaultchef.errors import MissingFileError
 
 
@@ -21,7 +21,8 @@ def test_expand_cookbook_replaces_embeds(tmp_path: Path) -> None:
     cookbook.write_text("# Test\n![[Recipes/R1]]\n", encoding="utf-8")
 
     baked = expand_cookbook(str(cookbook), str(vault))
-    assert "recipe_id" in baked
+    assert "vaultchef:recipe:start" in baked
+    assert "## R1" in baked
 
 
 def test_resolve_embed_path_supports_md(tmp_path: Path) -> None:
@@ -67,3 +68,26 @@ def test_expand_embed_read_error(tmp_path: Path) -> None:
     cookbook.write_text("![[Recipes/R1]]", encoding="utf-8")
     with pytest.raises(MissingFileError):
         expand_cookbook(str(cookbook), str(vault))
+
+
+def test_expand_embed_no_title(tmp_path: Path) -> None:
+    vault = tmp_path / "Vault"
+    recipes = vault / "Recipes"
+    recipes.mkdir(parents=True)
+    recipe_path = recipes / "R1.md"
+    recipe_path.write_text(
+        "---\nrecipe_id: 1\n---\n\n## Ingredients\n- a\n\n## Method\n1. b\n",
+        encoding="utf-8",
+    )
+    text = expand_embed("Recipes/R1", str(vault))
+    assert text.lstrip().startswith("## Ingredients")
+
+
+def test_split_frontmatter_edge_cases() -> None:
+    meta, body = _split_frontmatter("No frontmatter")
+    assert meta == {}
+    assert body == "No frontmatter"
+    meta, _ = _split_frontmatter("---\n- a\n---\nbody")
+    assert meta == {}
+    meta, _ = _split_frontmatter("---\n: [\n---\nbody")
+    assert meta == {}

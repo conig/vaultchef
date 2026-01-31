@@ -432,6 +432,7 @@ The visual identity aims for:
 - dense but readable ingredient lists
 - spacious method steps
 - optional notes in a shaded panel
+- no title page; page 1 must be the first recipe to preserve the two-page pattern per recipe
 
 Recommended macro concepts in `recipe.sty`:
 
@@ -439,6 +440,14 @@ Recommended macro concepts in `recipe.sty`:
 - `\RecipeMeta{serves}{prep}{cook}{rest}{total}`
 - two-column layout for ingredients and method where possible
 - sensible page breaks to avoid splitting ingredients from method
+
+The output cookbook PDF has the following requirements
+
+- No title page unless specified in the cookbook yaml frontmatter (include_title_page :true)
+- Each 2-sided page includes exactly one recipe. On the first page is the recipe title, ingredients, and when provided, a description.
+- The second page includes the methods and notes.
+
+This is important as it means that when printed, each recipe is on its own sheet of paper that can be handed to a cook who then does not need to search through the book for all relevant information.
 
 ## Caching and watch mode
 

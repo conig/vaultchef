@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+import argparse
+import types
+import sys
+import stat
 
 import pytest
 
@@ -16,6 +20,19 @@ def test_cli_no_command() -> None:
 def test_cli_tui_flag(monkeypatch) -> None:
     monkeypatch.setattr("vaultchef.cli._cmd_tui", lambda *a, **k: 0)
     assert cli.main(["--tui"]) == 0
+
+
+def test_cmd_tui_invokes_run(monkeypatch) -> None:
+    calls = {}
+
+    def fake_run_tui(args: dict[str, object]) -> int:
+        calls["args"] = args
+        return 0
+
+    monkeypatch.setitem(sys.modules, "vaultchef.tui", types.SimpleNamespace(run_tui=fake_run_tui))
+    rc = cli._cmd_tui(argparse.Namespace())
+    assert rc == 0
+    assert calls["args"] == {}
 
 
 def test_cli_new_recipe(tmp_path: Path, monkeypatch) -> None:
@@ -55,6 +72,42 @@ def test_cli_config_error(temp_home: Path) -> None:
 def test_cli_build_dry_run(example_vault: Path, tmp_path: Path, temp_home: Path) -> None:
     rc = cli.main(["build", "Family Cookbook", "--vault", str(example_vault), "--project", str(tmp_path), "--dry-run"])
     assert rc == 0
+
+
+def test_cli_build_creates_pdf(example_vault: Path, tmp_path: Path, temp_home: Path, monkeypatch) -> None:
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    pandoc = tmp_path / "pandoc"
+    pandoc.write_text(
+        """#!/usr/bin/env python3
+import sys
+out = None
+for i, arg in enumerate(sys.argv):
+    if arg == '-o' and i + 1 < len(sys.argv):
+        out = sys.argv[i + 1]
+if out:
+    with open(out, 'wb') as fh:
+        fh.write(b'%PDF-1.4\\n%mock')
+""",
+        encoding="utf-8",
+    )
+    pandoc.chmod(pandoc.stat().st_mode | stat.S_IEXEC)
+    rc = cli.main(
+        [
+            "build",
+            "Family Cookbook",
+            "--vault",
+            str(example_vault),
+            "--project",
+            str(tmp_path),
+            "--pandoc",
+            str(pandoc),
+        ]
+    )
+    assert rc == 0
+    assert (tmp_path / "build" / "Family Cookbook.pdf").exists()
+    assert (cwd / "Family Cookbook.pdf").exists()
 
 
 def test_cli_build_missing(example_vault: Path, tmp_path: Path, temp_home: Path) -> None:

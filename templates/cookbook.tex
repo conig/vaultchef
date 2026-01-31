@@ -82,34 +82,9 @@
   \vspace*{\fill}%
 }
 
-% Title styling.
-\IfFileExists{titling.sty}{
-  \pretitle{\begin{center}\Huge\scshape\color{VCink}}
-  \posttitle{\par\smallskip\textcolor{VCaccent}{\rule{0.25\textwidth}{0.6pt}}\end{center}}
-  \preauthor{\begin{center}\large\color{VCink}}
-  \postauthor{\end{center}}
-  \predate{\begin{center}\small\color{VCaccent}}
-  \postdate{\end{center}}
-}{}
-
-\title{$title$}
-$if(subtitle)$
-\newcommand{\subtitle}{$subtitle$}
-$endif$
-$if(author)$
-\author{$author$}
-$endif$
-
 \begin{document}
 \pagestyle{empty}
-\thispagestyle{empty}
-\VaultChefPageStart
-\maketitle
-$if(subtitle)$
-\begin{center}\subtitle\end{center}
-$endif$
-\VaultChefPageEnd
-\clearpage
+% Title page intentionally omitted so page 1 starts with the first recipe.
 
 $body$
 

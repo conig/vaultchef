@@ -5,7 +5,7 @@ import os
 import stat
 import pytest
 
-from vaultchef.build import build_cookbook
+from vaultchef.build import build_cookbook, _parse_cookbook_meta
 from vaultchef.config import resolve_config
 from vaultchef.errors import MissingFileError
 
@@ -32,14 +32,21 @@ if out:
     return script
 
 
-def test_build_dry_run(tmp_path: Path, example_vault: Path, temp_home: Path) -> None:
+def test_build_dry_run(tmp_path: Path, example_vault: Path, temp_home: Path, monkeypatch) -> None:
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
     cfg = resolve_config({"vault_path": str(example_vault), "project": str(tmp_path)})
     result = build_cookbook("Family Cookbook", cfg, dry_run=True, verbose=False)
     assert result.baked_md.exists()
     assert not result.pdf.exists()
+    assert not (tmp_path / "build" / "Family Cookbook.pdf").exists()
 
 
-def test_build_runs_pandoc(tmp_path: Path, example_vault: Path, temp_home: Path) -> None:
+def test_build_runs_pandoc(tmp_path: Path, example_vault: Path, temp_home: Path, monkeypatch) -> None:
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
     pandoc = _write_mock_pandoc(tmp_path)
     cfg = resolve_config(
         {
@@ -49,10 +56,46 @@ def test_build_runs_pandoc(tmp_path: Path, example_vault: Path, temp_home: Path)
         }
     )
     result = build_cookbook("Family Cookbook", cfg, dry_run=False, verbose=False)
-    assert result.pdf.exists()
+    build_pdf = tmp_path / "build" / "Family Cookbook.pdf"
+    final_pdf = cwd / "Family Cookbook.pdf"
+    assert build_pdf.exists()
+    assert final_pdf.exists()
+    assert result.pdf == final_pdf
 
 
 def test_build_missing_cookbook(tmp_path: Path, example_vault: Path, temp_home: Path) -> None:
     cfg = resolve_config({"vault_path": str(example_vault), "project": str(tmp_path)})
     with pytest.raises(MissingFileError):
         build_cookbook("Does Not Exist", cfg, dry_run=True, verbose=False)
+
+
+def test_parse_cookbook_meta_variants() -> None:
+    assert _parse_cookbook_meta("No frontmatter") == {}
+    assert _parse_cookbook_meta("---\n- a\n---\n") == {}
+    assert _parse_cookbook_meta("---\nsubtitle: null\n---\n") == {}
+    assert _parse_cookbook_meta("---\nauthor: [A, B]\n---\n")["author"] == "A, B"
+    bad_yaml = "---\n: [\n---\n"
+    assert _parse_cookbook_meta(bad_yaml) == {}
+
+
+def test_build_without_title_metadata(tmp_path: Path, temp_home: Path, monkeypatch) -> None:
+    vault = tmp_path / "Vault"
+    recipes = vault / "Recipes"
+    cookbooks = vault / "Cookbooks"
+    recipes.mkdir(parents=True)
+    cookbooks.mkdir(parents=True)
+    recipes.joinpath("R1.md").write_text(
+        "---\nrecipe_id: 1\ntitle: R1\n---\n\n## Ingredients\n- a\n\n## Method\n1. b\n",
+        encoding="utf-8",
+    )
+    cookbooks.joinpath("NoTitle.md").write_text("![[Recipes/R1]]\n", encoding="utf-8")
+
+    pandoc = _write_mock_pandoc(tmp_path)
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    cfg = resolve_config(
+        {"vault_path": str(vault), "project": str(tmp_path), "pandoc_path": str(pandoc)}
+    )
+    result = build_cookbook("NoTitle", cfg, dry_run=False, verbose=False)
+    assert result.pdf.exists()

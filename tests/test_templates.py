@@ -26,8 +26,17 @@ def test_render_cookbook_template() -> None:
 
 
 def test_render_cookbook_note() -> None:
-    text = render_cookbook_note("My Book", ["Recipes/One", "Recipes/Two"])
+    text = render_cookbook_note(
+        "My Book",
+        ["Recipes/One", "Recipes/Two"],
+        subtitle="Sub",
+        author="Auth",
+        style="menu-card",
+    )
     assert "title: My Book" in text
+    assert "subtitle: Sub" in text
+    assert "author: Auth" in text
+    assert "style: menu-card" in text
     assert "![[Recipes/One]]" in text
 
 
