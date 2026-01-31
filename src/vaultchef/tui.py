@@ -72,7 +72,9 @@ class VaultchefApp(App):
     Footer .footer--key,
     Footer .footer--description,
     Footer .footer--highlight,
-    Footer .footer--binding {
+    Footer .footer--binding,
+    Footer Label,
+    Footer * {
         color: #1C1A17;
     }
 
@@ -166,6 +168,19 @@ class VaultchefApp(App):
         background: #8C6F46;
     }
 
+    Button:focus {
+        background: #9A7B4F;
+        color: #F8F4EE;
+        border: round #9A7B4F;
+        text-style: none;
+    }
+
+    Button:focus > .button--label {
+        background: transparent;
+        color: #F8F4EE;
+        text-style: none;
+    }
+
     Input {
         background: #FDFBF7;
         border: round #D8C9B6;
@@ -217,7 +232,7 @@ class ModeScreen(Screen):
         yield Static("vaultchef", id="title")
         yield Static("Create a cookbook or build an existing one.")
         with Horizontal(id="mode-actions"):
-            yield Button("[underline]C[/underline]reate cookbook", id="create", variant="primary")
+            yield Button("[underline]C[/underline]reate cookbook", id="create")
             yield Button("[underline]B[/underline]uild cookbook", id="build")
         yield Footer()
 
