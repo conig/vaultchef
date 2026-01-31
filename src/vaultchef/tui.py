@@ -56,9 +56,29 @@ class CookbookInfo:
 
 
 class VaultchefApp(App):
+    TITLE = "vaultchef"
     CSS = """
     Screen {
         padding: 1 2;
+        background: #F8F4EE;
+        color: #1C1A17;
+    }
+
+    Header, Footer {
+        background: #F2ECE3;
+        color: #1C1A17;
+    }
+
+    Footer .footer--key,
+    Footer .footer--description,
+    Footer .footer--highlight,
+    Footer .footer--binding {
+        color: #1C1A17;
+    }
+
+    #title {
+        text-style: bold;
+        color: #1C1A17;
     }
 
     #mode-actions {
@@ -77,7 +97,15 @@ class VaultchefApp(App):
 
     #tag-list, #recipe-list, #selected-list, #cookbook-list {
         height: 1fr;
-        border: round $surface;
+        border: round #D8C9B6;
+        background: #FDFBF7;
+    }
+
+    ListView,
+    ListView > ListItem,
+    ListView > .list-item,
+    ListView Label {
+        color: #1C1A17;
     }
 
     ListView > ListItem.--highlight,
@@ -85,8 +113,8 @@ class VaultchefApp(App):
     ListView > .list-item.--highlight,
     ListView > .list-item.-highlight,
     ListView > .list-item--highlight {
-        background: $accent;
-        color: $text;
+        background: #E8DDCF;
+        color: #1C1A17;
         text-style: bold;
     }
 
@@ -95,24 +123,53 @@ class VaultchefApp(App):
     ListView:focus > .list-item.--highlight,
     ListView:focus > .list-item.-highlight,
     ListView:focus > .list-item--highlight {
-        background: $accent;
-        color: $text;
+        background: #9A7B4F;
+        color: #F8F4EE;
     }
 
     ListView > ListItem.cookbook-selected {
-        background: $accent;
-        color: $text;
+        background: #9A7B4F;
+        color: #F8F4EE;
         text-style: bold;
     }
 
     #status {
         height: auto;
         padding: 1 0 0 0;
-        color: $text-muted;
+        color: #5E4F42;
     }
 
     #name-input, #search-input {
         margin: 0 0 1 0;
+        background: #FDFBF7;
+        border: round #D8C9B6;
+        color: #1C1A17;
+    }
+
+    Button {
+        background: #F2ECE3;
+        color: #1C1A17;
+        border: round #D8C9B6;
+    }
+
+    Button.-primary {
+        background: #9A7B4F;
+        color: #F8F4EE;
+        border: round #9A7B4F;
+    }
+
+    Button:hover {
+        background: #E8DDCF;
+    }
+
+    Button.-primary:hover {
+        background: #8C6F46;
+    }
+
+    Input {
+        background: #FDFBF7;
+        border: round #D8C9B6;
+        color: #1C1A17;
     }
 
     #build-title {
@@ -157,7 +214,7 @@ class VaultchefApp(App):
 class ModeScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Static("Vaultchef TUI", id="title")
+        yield Static("vaultchef", id="title")
         yield Static("Create a cookbook or build an existing one.")
         with Horizontal(id="mode-actions"):
             yield Button("[underline]C[/underline]reate cookbook", id="create", variant="primary")
@@ -427,15 +484,15 @@ class BuildCookbookScreen(Screen):
         yield Static("", id="status")
         yield Footer()
 
-    def on_mount(self) -> None:
-        self._refresh_cookbooks()
+    async def on_mount(self) -> None:
+        await self._refresh_cookbooks()
         self.query_one("#search-input", Input).focus()
 
-    def on_input_changed(self, event: Input.Changed) -> None:
+    async def on_input_changed(self, event: Input.Changed) -> None:
         widget = getattr(event, "input", event.control)
         if widget.id == "search-input":
             self.search_query = event.value
-            self._refresh_cookbooks()
+            await self._refresh_cookbooks()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "build":
@@ -542,14 +599,16 @@ class BuildCookbookScreen(Screen):
         if isinstance(focused, Button) and hasattr(focused, "press"):
             focused.press()
 
-    def _refresh_cookbooks(self) -> None:
+    async def _refresh_cookbooks(self) -> None:
         cookbooks = self.app.cookbooks
         if self.search_query:
             cookbooks = _fuzzy_filter(cookbooks, self.search_query, lambda c: c.display())
         list_view = self.query_one("#cookbook-list", ListView)
-        _clear_list(list_view)
+        if list_view.children:
+            await list_view.clear()
         selected_stem = self.selected.stem if self.selected else None
         next_index = 0
+        items: list[ListItem] = []
         for idx, book in enumerate(cookbooks):
             display_text = book.display()
             prefix = "> " if idx == next_index else "  "
@@ -560,11 +619,11 @@ class BuildCookbookScreen(Screen):
             item.label_widget = label
             if selected_stem and book.stem == selected_stem:
                 next_index = idx
-            list_view.append(item)
+            items.append(item)
         self.highlight_index = next_index
-        _ensure_highlight(list_view)
+        if items:
+            await list_view.extend(items)
         self._apply_cookbook_selection()
-        self._schedule_cookbook_selection()
 
     def _apply_cookbook_selection(self) -> None:
         list_view = self.query_one("#cookbook-list", ListView)

@@ -523,6 +523,20 @@ Recommended tests:
 - A `fixtures/` vault with 2 to 3 recipes and one cookbook note.
 - A `make build` or `just build` command that runs the CLI locally.
 
+### Install (dev, pipx)
+
+Install the CLI in editable mode so local code changes are picked up:
+
+```bash
+pipx install --editable ".[dev]"
+```
+
+Reinstall after dependency changes:
+
+```bash
+pipx install --editable ".[dev]" --force
+```
+
 ### Release
 
 - Versioned binary or package
