@@ -28,6 +28,7 @@ Outputs land in `./build/`.
 ## CLI
 
 ```bash
+vaultchef            # launches TUI by default
 vaultchef --tui
 vaultchef build "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME] [--open] [--dry-run]
 vaultchef list [--vault PATH] [--tag TAG] [--category CATEGORY] [--json]
@@ -58,6 +59,7 @@ vault_path = "/home/james/Obsidian/Vault"
 recipes_dir = "Recipes"
 cookbooks_dir = "Cookbooks"
 tex_check = true
+tui_header_icon = "🍳"
 
 default_project = "/home/james/CookbookProject"
 
@@ -74,6 +76,10 @@ Recipe notes require frontmatter with `recipe_id` and `title`, and must include:
 
 - `## Ingredients`
 - `## Method`
+
+Optional frontmatter:
+
+- `image` (path to a hero image placed between the title and ingredients)
 
 Cookbook notes contain headings and embeds like:
 

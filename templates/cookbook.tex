@@ -3,6 +3,9 @@
 \usepackage{hyperref}
 \usepackage{xcolor}
 \usepackage{recipe}
+\IfFileExists{graphicx.sty}{
+  \usepackage{graphicx}
+}{}
 \geometry{margin=1in}
 \providecommand{\tightlist}{}
 
@@ -30,7 +33,6 @@
 \definecolor{VCink}{HTML}{1C1A17}
 \definecolor{VCaccent}{HTML}{9A7B4F}
 \definecolor{VCcream}{HTML}{F8F4EE}
-\pagecolor{VCcream}
 \color{VCink}
 
 \IfFileExists{fontspec.sty}{

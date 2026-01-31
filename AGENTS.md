@@ -96,6 +96,7 @@ vault = "/home/james/Obsidian/Vault"
 recipes_dir = "Recipes"
 cookbooks_dir = "Cookbooks"
 tex_check = true
+tui_header_icon = "🍳"
 
 default_project = "/home/james/CookbookProject"
 
@@ -210,6 +211,7 @@ Recommended frontmatter keys:
 - `tags` (list)
 - `menu` (one-sentence description for the menu-style header)
 - `source` (string)
+- `image` (string path to a hero image; placed between title and ingredients)
 
 Notes:
 
@@ -315,6 +317,8 @@ Build a cookbook:
 ```bash
 vaultchef build "Family Cookbook"
 ```
+
+Launching with no args opens the TUI by default.
 
 Build and open the PDF:
 

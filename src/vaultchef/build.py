@@ -49,7 +49,14 @@ def build_cookbook(cookbook_name: str, cfg: EffectiveConfig, dry_run: bool, verb
         extra_metadata = dict(cookbook_meta)
         if not extra_metadata.get("title"):
             extra_metadata["title"] = cookbook_name
-        run_pandoc(str(baked_path), str(pdf_path), cfg, verbose, extra_metadata=extra_metadata or None)
+        run_pandoc(
+            str(baked_path),
+            str(pdf_path),
+            cfg,
+            verbose,
+            extra_metadata=extra_metadata or None,
+            extra_resource_paths=[str(vault.vault_root)],
+        )
         if pdf_path.resolve() != final_pdf_path.resolve():
             shutil.copy2(pdf_path, final_pdf_path)
 

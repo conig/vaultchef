@@ -17,6 +17,10 @@ local function header_text(el)
   return pandoc.utils.stringify(el.content)
 end
 
+local function is_image_marker(el)
+  return el.format == "html" and el.text:match("vaultchef:image:")
+end
+
 local function latex_escape(text)
   local replacements = {
     ["\\"] = "\\textbackslash{}",
@@ -31,6 +35,20 @@ local function latex_escape(text)
     ["^"] = "\\textasciicircum{}",
   }
   return (text:gsub("([\\{}%%$&#_^~])", replacements))
+end
+
+local function image_from_marker(el)
+  local path = el.text:match("vaultchef:image:(.-)%s*%-%-%>")
+  if not path then
+    return nil
+  end
+  path = path:gsub("^%s+", ""):gsub("%s+$", "")
+  if path == "" then
+    return nil
+  end
+  local escaped = latex_escape(path)
+  local latex = "\\begin{center}\\includegraphics[width=0.6\\textwidth]{\\detokenize{" .. escaped .. "}}\\end{center}\n"
+  return { pandoc.RawBlock("latex", latex) }
 end
 
 function RawBlock(el)
@@ -49,6 +67,12 @@ function RawBlock(el)
     end
     page_open = true
     return blocks
+  end
+  if is_image_marker(el) then
+    local blocks = image_from_marker(el)
+    if blocks then
+      return blocks
+    end
   end
 end
 

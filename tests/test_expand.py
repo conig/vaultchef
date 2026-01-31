@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import pytest
 
-from vaultchef.expand import expand_cookbook, resolve_embed_path, expand_embed, _split_frontmatter
+from vaultchef.expand import expand_cookbook, resolve_embed_path, expand_embed, _split_frontmatter, _image_marker
 from vaultchef.errors import MissingFileError
 
 
@@ -83,6 +83,20 @@ def test_expand_embed_no_title(tmp_path: Path) -> None:
     assert text.lstrip().startswith("## Ingredients")
 
 
+def test_expand_embed_with_image_marker(tmp_path: Path) -> None:
+    vault = tmp_path / "Vault"
+    recipes = vault / "Recipes"
+    recipes.mkdir(parents=True)
+    recipe_path = recipes / "R1.md"
+    recipe_path.write_text(
+        "---\nrecipe_id: 1\ntitle: R1\nimage: Images/r1.jpg\n---\n\n## Ingredients\n- a\n\n## Method\n1. b\n",
+        encoding="utf-8",
+    )
+    text = expand_embed("Recipes/R1", str(vault))
+    assert "vaultchef:image:" in text
+    assert str((vault / "Images" / "r1.jpg").as_posix()) in text
+
+
 def test_split_frontmatter_edge_cases() -> None:
     meta, body = _split_frontmatter("No frontmatter")
     assert meta == {}
@@ -91,3 +105,11 @@ def test_split_frontmatter_edge_cases() -> None:
     assert meta == {}
     meta, _ = _split_frontmatter("---\n: [\n---\nbody")
     assert meta == {}
+
+
+def test_image_marker_variants() -> None:
+    vault = "/vault"
+    assert _image_marker({"image": ""}, vault) is None
+    assert _image_marker({"image": []}, vault) is None
+    assert _image_marker({"image": {"path": "x"}}, vault) is None
+    assert _image_marker({"image": ["one.jpg", "two.jpg"]}, vault) == "<!-- vaultchef:image:/vault/one.jpg -->"

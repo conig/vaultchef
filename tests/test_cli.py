@@ -10,13 +10,25 @@ import pytest
 
 from vaultchef import cli
 from vaultchef.tex import TexCheckResult
-from vaultchef.config import EffectiveConfig, PandocConfig, StyleConfig, TexConfig
+from vaultchef.config import EffectiveConfig, PandocConfig, StyleConfig, TexConfig, TuiConfig
 from vaultchef.errors import ConfigError, MissingFileError, ValidationError, PandocError, WatchError, VaultchefError
 from tests.utils import write_global_config
 
 
 def test_cli_no_command() -> None:
-    assert cli.main([]) == 1
+    called = {}
+
+    def fake_tui(*args, **kwargs):
+        called["ok"] = True
+        return 0
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(cli, "_cmd_tui", fake_tui)
+    try:
+        assert cli.main([]) == 0
+        assert called.get("ok") is True
+    finally:
+        monkeypatch.undo()
 
 
 def test_cli_tui_flag(monkeypatch) -> None:
@@ -41,6 +53,7 @@ def test_cmd_tui_invokes_run(monkeypatch) -> None:
         pandoc=PandocConfig(),
         style=StyleConfig(),
         tex=TexConfig(check_on_startup=False),
+        tui=TuiConfig(header_icon="🍳"),
         project_dir="/p",
     )
     monkeypatch.setattr(cli, "resolve_config", lambda *a, **k: cfg)
@@ -109,6 +122,7 @@ def test_warn_tex_disabled(monkeypatch, capsys) -> None:
         pandoc=PandocConfig(),
         style=StyleConfig(),
         tex=TexConfig(check_on_startup=False),
+        tui=TuiConfig(header_icon="🍳"),
         project_dir="/p",
     )
     monkeypatch.setattr(cli, "check_tex_dependencies", lambda pdf_engine=None: None)
@@ -127,6 +141,7 @@ def test_warn_tex_prints(monkeypatch, capsys) -> None:
         pandoc=PandocConfig(),
         style=StyleConfig(),
         tex=TexConfig(check_on_startup=True),
+        tui=TuiConfig(header_icon="🍳"),
         project_dir="/p",
     )
     result = TexCheckResult(

@@ -29,6 +29,11 @@ class TexConfig:
 
 
 @dataclass(frozen=True)
+class TuiConfig:
+    header_icon: str = "🍳"
+
+
+@dataclass(frozen=True)
 class EffectiveConfig:
     vault_path: str
     recipes_dir: str
@@ -39,6 +44,7 @@ class EffectiveConfig:
     pandoc: PandocConfig
     style: StyleConfig
     tex: TexConfig
+    tui: TuiConfig
     project_dir: str
 
 
@@ -117,6 +123,7 @@ def resolve_config(cli_args: dict[str, Any]) -> EffectiveConfig:
     pandoc_cfg = merged.get("pandoc", {})
     style_cfg = merged.get("style", {})
     tex_check = merged.get("tex_check", True)
+    tui_icon = merged.get("tui_header_icon", "🍳")
 
     return EffectiveConfig(
         vault_path=str(vault_path),
@@ -134,6 +141,7 @@ def resolve_config(cli_args: dict[str, Any]) -> EffectiveConfig:
         ),
         style=StyleConfig(theme=str(style_cfg.get("theme", "menu-card"))),
         tex=TexConfig(check_on_startup=bool(tex_check)),
+        tui=TuiConfig(header_icon=str(tui_icon)),
         project_dir=str(project_dir),
     )
 
@@ -178,6 +186,7 @@ def config_to_toml(cfg: EffectiveConfig) -> str:
     lines.append(f"build_dir = {cfg.build_dir!r}")
     lines.append(f"cache_dir = {cfg.cache_dir!r}")
     lines.append(f"tex_check = {cfg.tex.check_on_startup!r}")
+    lines.append(f"tui_header_icon = {cfg.tui.header_icon!r}")
     lines.append("")
     lines.append("[pandoc]")
     lines.append(f"pdf_engine = {cfg.pandoc.pdf_engine!r}")

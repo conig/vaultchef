@@ -15,12 +15,19 @@ def run_pandoc(
     cfg: EffectiveConfig,
     verbose: bool,
     extra_metadata: dict[str, str] | None = None,
+    extra_resource_paths: list[str] | None = None,
 ) -> None:
     paths = resolve_project_paths(cfg)
     output_dir = Path(output_pdf).parent
     texmf_cache = output_dir
     texmf_var = output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
+    resource_paths = [str(paths.style_dir)]
+    if extra_resource_paths:
+        for path in extra_resource_paths:
+            if path and path not in resource_paths:
+                resource_paths.append(path)
+
     cmd: list[str] = [
         cfg.pandoc.pandoc_path,
         str(input_md),
@@ -35,7 +42,7 @@ def run_pandoc(
         "--metadata",
         f"theme={cfg.style.theme}",
         "--resource-path",
-        str(paths.style_dir),
+        os.pathsep.join(resource_paths),
     ]
     if extra_metadata:
         for key, value in extra_metadata.items():

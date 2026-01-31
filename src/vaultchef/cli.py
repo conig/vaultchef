@@ -32,8 +32,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.tui:
         return _cmd_tui(args)
     if not args.command:
-        parser.print_help()
-        return 1
+        return _cmd_tui(args)
 
     try:
         if args.command == "build":

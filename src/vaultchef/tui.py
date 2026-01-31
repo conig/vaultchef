@@ -226,9 +226,19 @@ class VaultchefApp(App):
                 self.push_screen(TexDepsScreen(result))
 
 
+def _header_icon(screen: Screen) -> str:
+    app = getattr(screen, "app", None)
+    cfg = getattr(app, "cfg", None) if app else None
+    icon = getattr(getattr(cfg, "tui", None), "header_icon", None)
+    if icon is None:
+        return "🍳"
+    text = str(icon).strip()
+    return text or "🍳"
+
+
 class ModeScreen(Screen):
     def compose(self) -> ComposeResult:
-        yield Header()
+        yield Header(icon=_header_icon(self))
         yield Static("vaultchef", id="title")
         yield Static("Create a cookbook or build an existing one.")
         with Horizontal(id="mode-actions"):
@@ -277,7 +287,7 @@ class CreateCookbookScreen(Screen):
         self.search_query: str = ""
 
     def compose(self) -> ComposeResult:
-        yield Header()
+        yield Header(icon=_header_icon(self))
         yield Label("Cookbook name")
         yield Input(placeholder="Family Cookbook", id="name-input")
         yield Label("Filter tags")
@@ -489,7 +499,7 @@ class BuildCookbookScreen(Screen):
         self.highlight_index: int = 0
 
     def compose(self) -> ComposeResult:
-        yield Header()
+        yield Header(icon=_header_icon(self))
         yield Label("Find a cookbook")
         yield Input(placeholder="Type to search", id="search-input")
         yield ListView(id="cookbook-list")
@@ -696,7 +706,7 @@ class TexDepsScreen(Screen):
         self.result = result
 
     def compose(self) -> ComposeResult:
-        yield Header()
+        yield Header(icon=_header_icon(self))
         yield Static("TeX dependencies missing", id="title")
         for line in format_tex_report(self.result):
             yield Static(line)
@@ -747,7 +757,7 @@ class BuildProgressScreen(Screen):
         self._failed = False
 
     def compose(self) -> ComposeResult:
-        yield Header()
+        yield Header(icon=_header_icon(self))
         yield Static(f"Cooking up {self.cookbook.display()}", id="build-title")
         yield Static("", id="build-animation")
         yield Static("", id="build-bar")

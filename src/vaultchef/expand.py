@@ -12,6 +12,7 @@ from .errors import MissingFileError
 EMBED_RE = re.compile(r"!\[\[([^\]]+)\]\]")
 BOUNDARY = "\n\n<!-- vaultchef:recipe:start -->\n\n"
 FRONTMATTER_RE = re.compile(r"^\ufeff?\s*---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
+IMAGE_MARKER_PREFIX = "<!-- vaultchef:image:"
 
 
 def expand_cookbook(cookbook_path: str, vault_root: str) -> str:
@@ -37,7 +38,10 @@ def expand_embed(embed: str, vault_root: str) -> str:
         raise MissingFileError(f"Embedded note not found: {path}") from exc
     meta, body = _split_frontmatter(content)
     title = meta.get("title")
+    image_marker = _image_marker(meta, vault_root)
     if title:
+        if image_marker:
+            return f"## {title}\n\n{image_marker}\n\n{body}"
         return f"## {title}\n\n{body}"
     return body
 
@@ -54,6 +58,23 @@ def _split_frontmatter(md: str) -> tuple[dict[str, Any], str]:
     if not isinstance(data, dict):
         data = {}
     return data, md[match.end():]
+
+
+def _image_marker(meta: dict[str, Any], vault_root: str) -> str | None:
+    image = meta.get("image")
+    if isinstance(image, list):
+        image = image[0] if image else None
+    if image is None:
+        return None
+    if isinstance(image, dict):
+        return None
+    text = str(image).strip()
+    if not text:
+        return None
+    path = Path(text)
+    if not path.is_absolute():
+        path = Path(vault_root) / path
+    return f"{IMAGE_MARKER_PREFIX}{path.as_posix()} -->"
 
 
 def resolve_embed_path(embed: str, vault_root: str) -> Path:
