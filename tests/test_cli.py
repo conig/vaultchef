@@ -9,6 +9,8 @@ import stat
 import pytest
 
 from vaultchef import cli
+from vaultchef.tex import TexCheckResult
+from vaultchef.config import EffectiveConfig, PandocConfig, StyleConfig, TexConfig
 from vaultchef.errors import ConfigError, MissingFileError, ValidationError, PandocError, WatchError, VaultchefError
 from tests.utils import write_global_config
 
@@ -29,10 +31,117 @@ def test_cmd_tui_invokes_run(monkeypatch) -> None:
         calls["args"] = args
         return 0
 
+    cfg = EffectiveConfig(
+        vault_path="/v",
+        recipes_dir="Recipes",
+        cookbooks_dir="Cookbooks",
+        default_project=None,
+        build_dir="build",
+        cache_dir="cache",
+        pandoc=PandocConfig(),
+        style=StyleConfig(),
+        tex=TexConfig(check_on_startup=False),
+        project_dir="/p",
+    )
+    monkeypatch.setattr(cli, "resolve_config", lambda *a, **k: cfg)
     monkeypatch.setitem(sys.modules, "vaultchef.tui", types.SimpleNamespace(run_tui=fake_run_tui))
     rc = cli._cmd_tui(argparse.Namespace())
     assert rc == 0
     assert calls["args"] == {}
+
+
+def test_cmd_tex_check_skips_install(monkeypatch, capsys) -> None:
+    result = TexCheckResult(
+        missing_required=["geometry"],
+        missing_optional=[],
+        missing_binaries=[],
+        checked_packages=True,
+    )
+    monkeypatch.setattr(cli, "check_tex_dependencies", lambda pdf_engine=None: result)
+    monkeypatch.setattr(cli, "format_tex_report", lambda res: ["Missing required packages: geometry"])
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    called = {}
+    monkeypatch.setattr(cli, "install_tex_packages", lambda pkgs: called.setdefault("pkgs", pkgs))
+    rc = cli._cmd_tex_check(argparse.Namespace(pdf_engine=None))
+    assert rc == 0
+    assert "pkgs" not in called
+    assert "Missing required packages" in capsys.readouterr().out
+
+
+def test_cmd_tex_check_installs(monkeypatch) -> None:
+    result = TexCheckResult(
+        missing_required=["geometry"],
+        missing_optional=["fancyhdr"],
+        missing_binaries=[],
+        checked_packages=True,
+    )
+    monkeypatch.setattr(cli, "check_tex_dependencies", lambda pdf_engine=None: result)
+    monkeypatch.setattr(cli, "format_tex_report", lambda res: ["Missing required packages: geometry"])
+    monkeypatch.setattr("builtins.input", lambda _: "y")
+    called = {}
+    monkeypatch.setattr(cli, "install_tex_packages", lambda pkgs: called.setdefault("pkgs", pkgs))
+    rc = cli._cmd_tex_check(argparse.Namespace(pdf_engine=None))
+    assert rc == 0
+    assert called["pkgs"] == ["geometry", "fancyhdr"]
+
+
+def test_cli_tex_check_command(monkeypatch) -> None:
+    result = TexCheckResult(
+        missing_required=[],
+        missing_optional=[],
+        missing_binaries=[],
+        checked_packages=True,
+    )
+    monkeypatch.setattr(cli, "check_tex_dependencies", lambda pdf_engine=None: result)
+    monkeypatch.setattr(cli, "format_tex_report", lambda res: ["TeX dependencies OK."])
+    rc = cli.main(["tex-check"])
+    assert rc == 0
+
+
+def test_warn_tex_disabled(monkeypatch, capsys) -> None:
+    cfg = EffectiveConfig(
+        vault_path="/v",
+        recipes_dir="Recipes",
+        cookbooks_dir="Cookbooks",
+        default_project=None,
+        build_dir="build",
+        cache_dir="cache",
+        pandoc=PandocConfig(),
+        style=StyleConfig(),
+        tex=TexConfig(check_on_startup=False),
+        project_dir="/p",
+    )
+    monkeypatch.setattr(cli, "check_tex_dependencies", lambda pdf_engine=None: None)
+    cli._maybe_warn_tex(cfg)
+    assert capsys.readouterr().err == ""
+
+
+def test_warn_tex_prints(monkeypatch, capsys) -> None:
+    cfg = EffectiveConfig(
+        vault_path="/v",
+        recipes_dir="Recipes",
+        cookbooks_dir="Cookbooks",
+        default_project=None,
+        build_dir="build",
+        cache_dir="cache",
+        pandoc=PandocConfig(),
+        style=StyleConfig(),
+        tex=TexConfig(check_on_startup=True),
+        project_dir="/p",
+    )
+    result = TexCheckResult(
+        missing_required=["geometry"],
+        missing_optional=[],
+        missing_binaries=[],
+        checked_packages=True,
+    )
+    monkeypatch.setattr(cli, "check_tex_dependencies", lambda pdf_engine=None: result)
+    monkeypatch.setattr(cli, "format_tex_report", lambda res: ["Missing required packages: geometry"])
+    cli._maybe_warn_tex(cfg)
+    err = capsys.readouterr().err
+    assert "Missing required packages" in err
+    assert "vaultchef tex-check" in err
+    assert "tex_check = false" in err
 
 
 def test_cli_new_recipe(tmp_path: Path, monkeypatch) -> None:

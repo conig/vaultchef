@@ -97,6 +97,7 @@ style_dir = "templates"
     assert cfg.build_dir == "out"
     assert cfg.pandoc.pdf_engine == "lualatex"
     assert cfg.style.theme == "minimal"
+    assert cfg.tex.check_on_startup is True
 
 
 def test_resolve_config_profile(temp_home: Path, tmp_path: Path) -> None:
@@ -120,3 +121,10 @@ def test_config_to_toml(temp_home: Path, tmp_path: Path) -> None:
     assert "vault_path" in text
     assert "[pandoc]" in text
     assert "default_project" in text
+    assert "tex_check" in text
+
+
+def test_resolve_config_tex_check_override(temp_home: Path, tmp_path: Path) -> None:
+    write_global_config(temp_home, "vault_path = '/vault'\ntex_check = false\n")
+    cfg = resolve_config({"project": str(tmp_path)})
+    assert cfg.tex.check_on_startup is False

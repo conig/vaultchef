@@ -95,6 +95,7 @@ Example:
 vault = "/home/james/Obsidian/Vault"
 recipes_dir = "Recipes"
 cookbooks_dir = "Cookbooks"
+tex_check = true
 
 default_project = "/home/james/CookbookProject"
 
@@ -327,6 +328,12 @@ Watch for changes and rebuild:
 vaultchef watch "Family Cookbook"
 ```
 
+Check and install TeX dependencies:
+
+```bash
+vaultchef tex-check
+```
+
 Create a new recipe note from a template:
 
 ```bash
@@ -433,6 +440,8 @@ The visual identity aims for:
 - spacious method steps
 - optional notes in a shaded panel
 - no title page; page 1 must be the first recipe to preserve the two-page pattern per recipe
+- recipe title in the page header on every recipe page
+- TUI prompts to install missing TeX packages when detected (can be disabled with tex_check = false)
 
 Recommended macro concepts in `recipe.sty`:
 

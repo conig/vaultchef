@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 from .build import build_cookbook
-from .config import resolve_config, config_to_toml
+from .config import resolve_config, config_to_toml, EffectiveConfig
 from .errors import (
     VaultchefError,
     ConfigError,
@@ -23,6 +23,7 @@ from .templates import (
     write_template_file,
 )
 from .watch import watch_cookbook
+from .tex import check_tex_dependencies, format_tex_report, install_tex_packages
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -49,6 +50,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_init(args)
         if args.command == "config":
             return _cmd_config(args)
+        if args.command == "tex-check":
+            return _cmd_tex_check(args)
     except VaultchefError as exc:
         print(str(exc), file=sys.stderr)
         return _exit_code(exc)
@@ -121,12 +124,13 @@ def _build_parser() -> argparse.ArgumentParser:
     init.add_argument("--force", action="store_true")
 
     config = sub.add_parser("config", parents=[common])
+    sub.add_parser("tex-check", parents=[common])
 
     return parser
 
 
 def _cmd_build(args: argparse.Namespace) -> int:
-    cfg = resolve_config(_cli_args_dict(args))
+    cfg = _resolve_cfg(args)
     result = build_cookbook(args.cookbook_name, cfg, dry_run=args.dry_run, verbose=args.verbose)
     if args.open and not args.dry_run:
         _open_file(str(result.pdf))
@@ -134,7 +138,7 @@ def _cmd_build(args: argparse.Namespace) -> int:
 
 
 def _cmd_list(args: argparse.Namespace) -> int:
-    cfg = resolve_config(_cli_args_dict(args))
+    cfg = _resolve_cfg(args)
     recipes = list_recipes(cfg, args.tag, args.category)
     if args.json:
         print(json.dumps(recipes, indent=2))
@@ -145,7 +149,7 @@ def _cmd_list(args: argparse.Namespace) -> int:
 
 
 def _cmd_watch(args: argparse.Namespace) -> int:
-    cfg = resolve_config(_cli_args_dict(args))
+    cfg = _resolve_cfg(args)
     watch_cookbook(args.cookbook_name, cfg, debounce_ms=args.debounce, verbose=args.verbose)
     return 0
 
@@ -199,7 +203,7 @@ def _cmd_init(args: argparse.Namespace) -> int:
 
 
 def _cmd_config(args: argparse.Namespace) -> int:
-    cfg = resolve_config(_cli_args_dict(args))
+    cfg = _resolve_cfg(args)
     print(config_to_toml(cfg))
     return 0
 
@@ -207,7 +211,44 @@ def _cmd_config(args: argparse.Namespace) -> int:
 def _cmd_tui(args: argparse.Namespace) -> int:
     from .tui import run_tui
 
+    cfg = resolve_config(_cli_args_dict(args))
+    _maybe_warn_tex(cfg)
     return run_tui(_cli_args_dict(args))
+
+
+def _cmd_tex_check(args: argparse.Namespace) -> int:
+    result = check_tex_dependencies(pdf_engine=args.pdf_engine)
+    for line in format_tex_report(result):
+        print(line)
+    missing = result.missing_required + result.missing_optional
+    if missing and result.checked_packages:
+        answer = input("Install missing TeX packages with tlmgr? [y/N]: ").strip().lower()
+        if answer in ("y", "yes"):
+            install_tex_packages(missing)
+            print("Installation complete.")
+    return 0
+
+
+def _resolve_cfg(args: argparse.Namespace) -> EffectiveConfig:
+    cfg = resolve_config(_cli_args_dict(args))
+    _maybe_warn_tex(cfg)
+    return cfg
+
+
+def _maybe_warn_tex(cfg: EffectiveConfig) -> None:
+    if not cfg.tex.check_on_startup:
+        return
+    result = check_tex_dependencies(pdf_engine=cfg.pandoc.pdf_engine)
+    if not (result.missing_binaries or result.missing_required or result.missing_optional):
+        return
+    for line in format_tex_report(result):
+        print(line, file=sys.stderr)
+    print("Run `vaultchef tex-check` to install missing packages.", file=sys.stderr)
+    print(
+        "Disable this warning by setting tex_check = false in ~/.config/vaultchef/config.toml "
+        "or <project>/vaultchef.toml.",
+        file=sys.stderr,
+    )
 
 
 def _ensure_dir(root: str, name: str) -> None:

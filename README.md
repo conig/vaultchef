@@ -36,6 +36,7 @@ vaultchef new-recipe --id 116 --title "Lemon Tart"
 vaultchef new-cookbook --title "Family Cookbook"
 vaultchef init [PATH] [--force]
 vaultchef config [--vault PATH] [--project PATH] [--profile NAME]
+vaultchef tex-check [--pdf-engine ENGINE]
 ```
 
 ## Config
@@ -56,6 +57,7 @@ Example global config:
 vault_path = "/home/james/Obsidian/Vault"
 recipes_dir = "Recipes"
 cookbooks_dir = "Cookbooks"
+tex_check = true
 
 default_project = "/home/james/CookbookProject"
 

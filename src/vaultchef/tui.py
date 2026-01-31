@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 import os
 import re
+import threading
 from typing import Iterable, Optional
 from difflib import SequenceMatcher
 
@@ -13,6 +14,7 @@ from .errors import VaultchefError, ConfigError
 from .listing import list_recipes
 from .paths import resolve_vault_paths
 from .templates import render_cookbook_note
+from .tex import check_tex_dependencies, format_tex_report, install_tex_packages
 
 try:  # Textual is optional at import time for non-TUI usage.
     from textual.app import App, ComposeResult
@@ -78,6 +80,31 @@ class VaultchefApp(App):
         border: round $surface;
     }
 
+    ListView > ListItem.--highlight,
+    ListView > ListItem.-highlight,
+    ListView > .list-item.--highlight,
+    ListView > .list-item.-highlight,
+    ListView > .list-item--highlight {
+        background: $accent;
+        color: $text;
+        text-style: bold;
+    }
+
+    ListView:focus > ListItem.--highlight,
+    ListView:focus > ListItem.-highlight,
+    ListView:focus > .list-item.--highlight,
+    ListView:focus > .list-item.-highlight,
+    ListView:focus > .list-item--highlight {
+        background: $accent;
+        color: $text;
+    }
+
+    ListView > ListItem.cookbook-selected {
+        background: $accent;
+        color: $text;
+        text-style: bold;
+    }
+
     #status {
         height: auto;
         padding: 1 0 0 0;
@@ -86,6 +113,26 @@ class VaultchefApp(App):
 
     #name-input, #search-input {
         margin: 0 0 1 0;
+    }
+
+    #build-title {
+        text-style: bold;
+        padding: 1 0 0 0;
+    }
+
+    #build-animation {
+        height: auto;
+        padding: 1 0 0 0;
+    }
+
+    #build-bar {
+        height: auto;
+        padding: 0 0 1 0;
+    }
+
+    #build-status {
+        height: auto;
+        color: $text-muted;
     }
     """
 
@@ -101,6 +148,10 @@ class VaultchefApp(App):
 
     def on_mount(self) -> None:
         self.push_screen(ModeScreen())
+        if self.cfg.tex.check_on_startup:
+            result = check_tex_dependencies(pdf_engine=self.cfg.pandoc.pdf_engine)
+            if result.missing_binaries or result.missing_required or result.missing_optional:
+                self.push_screen(TexDepsScreen(result))
 
 
 class ModeScreen(Screen):
@@ -109,14 +160,22 @@ class ModeScreen(Screen):
         yield Static("Vaultchef TUI", id="title")
         yield Static("Create a cookbook or build an existing one.")
         with Horizontal(id="mode-actions"):
-            yield Button("Create cookbook", id="create", variant="primary")
-            yield Button("Build cookbook", id="build")
+            yield Button("[underline]C[/underline]reate cookbook", id="create", variant="primary")
+            yield Button("[underline]B[/underline]uild cookbook", id="build")
         yield Footer()
 
     def on_mount(self) -> None:
         self.query_one("#create", Button).focus()
 
     def on_key(self, event) -> None:
+        if event.key in ("c", "C"):
+            self.query_one("#create", Button).press()
+            event.stop()
+            return
+        if event.key in ("b", "B"):
+            self.query_one("#build", Button).press()
+            event.stop()
+            return
         if event.key in ("h", "left"):
             self.query_one("#create", Button).focus()
             event.stop()
@@ -355,6 +414,7 @@ class BuildCookbookScreen(Screen):
         super().__init__()
         self.search_query: str = ""
         self.selected: Optional[CookbookInfo] = None
+        self.highlight_index: int = 0
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -388,6 +448,8 @@ class BuildCookbookScreen(Screen):
         if list_view.id == "cookbook-list":
             item = event.item
             self.selected = getattr(item, "cookbook", None)
+            self.highlight_index = _list_view_index(list_view, item)
+            self._apply_cookbook_selection()
             self._build_selected()
 
     def on_key(self, event) -> None:
@@ -405,6 +467,11 @@ class BuildCookbookScreen(Screen):
                 delta = 1 if event.key == "down" else -1
                 self._move_highlight_in(self.query_one("#cookbook-list", ListView), delta)
                 event.stop()
+                return
+            if event.key in ("enter",):
+                self._build_selected()
+                event.stop()
+                return
             return
         if event.key in ("down", "j"):
             self._move_highlight(1)
@@ -461,6 +528,8 @@ class BuildCookbookScreen(Screen):
                 list_view.action_cursor_up()
         except Exception:
             pass
+        self.highlight_index = _current_index(list_view, self.highlight_index)
+        self._apply_cookbook_selection()
 
     def _activate_focused(self) -> None:
         focused = self.app.focused
@@ -479,27 +548,200 @@ class BuildCookbookScreen(Screen):
             cookbooks = _fuzzy_filter(cookbooks, self.search_query, lambda c: c.display())
         list_view = self.query_one("#cookbook-list", ListView)
         _clear_list(list_view)
-        for book in cookbooks:
-            item = ListItem(Label(book.display()))
+        selected_stem = self.selected.stem if self.selected else None
+        next_index = 0
+        for idx, book in enumerate(cookbooks):
+            display_text = book.display()
+            prefix = "> " if idx == next_index else "  "
+            label = Label(f"{prefix}{display_text}")
+            item = ListItem(label)
             item.cookbook = book
+            item.display_text = display_text
+            item.label_widget = label
+            if selected_stem and book.stem == selected_stem:
+                next_index = idx
             list_view.append(item)
+        self.highlight_index = next_index
+        _ensure_highlight(list_view)
+        self._apply_cookbook_selection()
+        self._schedule_cookbook_selection()
+
+    def _apply_cookbook_selection(self) -> None:
+        list_view = self.query_one("#cookbook-list", ListView)
+        items = list(list_view.children)
+        if not items:
+            self.selected = None
+            return
+        idx = max(0, min(self.highlight_index, len(items) - 1))
+        for i, item in enumerate(items):
+            if i == idx:
+                if hasattr(item, "add_class"):
+                    item.add_class("cookbook-selected")
+                label = getattr(item, "label_widget", None)
+                text = getattr(item, "display_text", None)
+                if label is not None and text is not None:
+                    label.update(f"> {text}")
+            else:
+                if hasattr(item, "remove_class"):
+                    item.remove_class("cookbook-selected")
+                label = getattr(item, "label_widget", None)
+                text = getattr(item, "display_text", None)
+                if label is not None and text is not None:
+                    label.update(f"  {text}")
+        self.highlight_index = idx
+        self.selected = getattr(items[idx], "cookbook", None)
+        try:
+            if hasattr(list_view, "index"):
+                list_view.index = idx
+            elif hasattr(list_view, "highlighted"):
+                list_view.highlighted = idx
+        except Exception:
+            pass
+
+    def _schedule_cookbook_selection(self) -> None:
+        try:
+            self.call_after_refresh(self._apply_cookbook_selection)
+        except Exception:
+            self.set_timer(0, self._apply_cookbook_selection)
 
     def _build_selected(self) -> None:
         cookbook = self.selected or _current_highlight(self.query_one("#cookbook-list", ListView))
         if not cookbook:
             self._set_status("Select a cookbook to build.")
             return
-        try:
-            cfg = replace(self.app.cfg, project_dir=os.getcwd())
-            result = build_cookbook(cookbook.stem, cfg, dry_run=False, verbose=False)
-        except VaultchefError as exc:
-            self._set_status(str(exc))
-            return
-        self._set_status(f"Built {result.pdf}")
-        self.app.exit()
+        cfg = replace(self.app.cfg, project_dir=os.getcwd())
+        self.app.push_screen(BuildProgressScreen(cookbook, cfg))
 
     def _set_status(self, message: str) -> None:
         self.query_one("#status", Static).update(message)
+
+
+class TexDepsScreen(Screen):
+    def __init__(self, result) -> None:
+        super().__init__()
+        self.result = result
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Static("TeX dependencies missing", id="title")
+        for line in format_tex_report(self.result):
+            yield Static(line)
+        yield Static("Run `vaultchef tex-check` for details or set tex_check = false to disable this warning.")
+        with Horizontal():
+            yield Button("Install packages", id="install", variant="primary")
+            yield Button("Continue", id="continue")
+            yield Button("Quit", id="quit")
+        yield Static("", id="status")
+        yield Footer()
+
+    def on_mount(self) -> None:
+        self.query_one("#install", Button).focus()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "quit":
+            self.app.exit()
+            return
+        if event.button.id == "continue":
+            self.app.pop_screen()
+            return
+        if event.button.id == "install":
+            missing = self.result.missing_required + self.result.missing_optional
+            if not missing:
+                self._set_status("No missing packages to install.")
+                return
+            try:
+                install_tex_packages(missing)
+            except ConfigError as exc:
+                self._set_status(str(exc))
+                return
+            self._set_status("Installation complete.")
+            self.app.pop_screen()
+
+    def _set_status(self, message: str) -> None:
+        self.query_one("#status", Static).update(message)
+
+
+class BuildProgressScreen(Screen):
+    def __init__(self, cookbook: CookbookInfo, cfg: EffectiveConfig) -> None:
+        super().__init__()
+        self.cookbook = cookbook
+        self.cfg = cfg
+        self._frame_idx = 0
+        self._bar_pos = 0
+        self._bar_dir = 1
+        self._timer = None
+        self._failed = False
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Static(f"Cooking up {self.cookbook.display()}", id="build-title")
+        yield Static("", id="build-animation")
+        yield Static("", id="build-bar")
+        yield Static("Building...", id="build-status")
+        yield Footer()
+
+    def on_mount(self) -> None:
+        self._update_animation()
+        self._timer = self.set_interval(0.12, self._update_animation)
+        thread = threading.Thread(target=self._run_build, daemon=True)
+        thread.start()
+
+    def on_key(self, event) -> None:
+        if self._failed and event.key in ("enter", "escape", "q"):
+            self.app.pop_screen()
+            event.stop()
+
+    def _run_build(self) -> None:
+        try:
+            result = build_cookbook(self.cookbook.stem, self.cfg, dry_run=False, verbose=False)
+        except VaultchefError as exc:
+            self.app.call_from_thread(self._on_build_error, str(exc))
+            return
+        except Exception as exc:  # pragma: no cover
+            self.app.call_from_thread(self._on_build_error, f"Build failed: {exc}")
+            return
+        self.app.call_from_thread(self._on_build_success, result.pdf)
+
+    def _update_animation(self) -> None:
+        frames = [
+            "Simmering .  ",
+            "Simmering .. ",
+            "Simmering ...",
+            "Simmering ....",
+            "Simmering ...",
+            "Simmering .. ",
+        ]
+        self._frame_idx = (self._frame_idx + 1) % len(frames)
+        self.query_one("#build-animation", Static).update(frames[self._frame_idx])
+
+        bar_width = 24
+        self._bar_pos += self._bar_dir
+        if self._bar_pos >= bar_width:
+            self._bar_pos = bar_width
+            self._bar_dir = -1
+        elif self._bar_pos <= 0:
+            self._bar_pos = 0
+            self._bar_dir = 1
+        filled = self._bar_pos
+        bar = f"[{'#' * filled}{'-' * (bar_width - filled)}]"
+        self.query_one("#build-bar", Static).update(bar)
+
+    def _stop_animation(self) -> None:
+        if self._timer is not None:
+            self._timer.stop()
+            self._timer = None
+
+    def _on_build_success(self, pdf_path: Path) -> None:
+        self._stop_animation()
+        self.query_one("#build-status", Static).update(f"Built {pdf_path}")
+        self.set_timer(0.6, self.app.exit)
+
+    def _on_build_error(self, message: str) -> None:
+        self._stop_animation()
+        self._failed = True
+        self.query_one("#build-status", Static).update(message)
+        self.query_one("#build-animation", Static).update("Build failed.")
+        self.query_one("#build-bar", Static).update("Press Enter to return.")
 
 
 def run_tui(cli_args: dict[str, object]) -> int:
@@ -600,6 +842,38 @@ def _clear_list(list_view: ListView) -> None:
         list_view.clear()
     else:  # pragma: no cover - older Textual versions
         list_view.remove_children()
+
+
+def _ensure_highlight(list_view: ListView) -> None:
+    try:
+        highlighted = getattr(list_view, "highlighted", None)
+        if highlighted in (None, -1):
+            if list_view.children:
+                if hasattr(list_view, "index"):
+                    list_view.index = 0
+                elif hasattr(list_view, "highlighted"):
+                    list_view.highlighted = 0
+    except Exception:
+        pass
+
+
+def _list_view_index(list_view: ListView, item: ListItem) -> int:
+    try:
+        return list(list_view.children).index(item)
+    except ValueError:
+        return 0
+    except Exception:
+        return 0
+
+
+def _current_index(list_view: ListView, fallback: int) -> int:
+    highlighted = getattr(list_view, "highlighted", None)
+    if isinstance(highlighted, int) and highlighted >= 0:
+        return highlighted
+    item = getattr(list_view, "highlighted_child", None)
+    if item is not None:
+        return _list_view_index(list_view, item)
+    return fallback
 
 
 def _current_highlight(list_view: ListView) -> Optional[CookbookInfo]:

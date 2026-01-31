@@ -24,6 +24,11 @@ class StyleConfig:
 
 
 @dataclass(frozen=True)
+class TexConfig:
+    check_on_startup: bool = True
+
+
+@dataclass(frozen=True)
 class EffectiveConfig:
     vault_path: str
     recipes_dir: str
@@ -33,6 +38,7 @@ class EffectiveConfig:
     cache_dir: str
     pandoc: PandocConfig
     style: StyleConfig
+    tex: TexConfig
     project_dir: str
 
 
@@ -110,6 +116,7 @@ def resolve_config(cli_args: dict[str, Any]) -> EffectiveConfig:
 
     pandoc_cfg = merged.get("pandoc", {})
     style_cfg = merged.get("style", {})
+    tex_check = merged.get("tex_check", True)
 
     return EffectiveConfig(
         vault_path=str(vault_path),
@@ -126,6 +133,7 @@ def resolve_config(cli_args: dict[str, Any]) -> EffectiveConfig:
             pandoc_path=str(pandoc_cfg.get("pandoc_path", "pandoc")),
         ),
         style=StyleConfig(theme=str(style_cfg.get("theme", "menu-card"))),
+        tex=TexConfig(check_on_startup=bool(tex_check)),
         project_dir=str(project_dir),
     )
 
@@ -169,6 +177,7 @@ def config_to_toml(cfg: EffectiveConfig) -> str:
         lines.append(f"default_project = {cfg.default_project!r}")
     lines.append(f"build_dir = {cfg.build_dir!r}")
     lines.append(f"cache_dir = {cfg.cache_dir!r}")
+    lines.append(f"tex_check = {cfg.tex.check_on_startup!r}")
     lines.append("")
     lines.append("[pandoc]")
     lines.append(f"pdf_engine = {cfg.pandoc.pdf_engine!r}")
