@@ -44,6 +44,7 @@ vaultchef tex-check [--pdf-engine ENGINE]
 
 Global config lives at `~/.config/vaultchef/config.toml`.
 Project config lives at `<project>/vaultchef.toml`.
+Optional profiles live at `~/.config/vaultchef/projects.d/<name>.toml`.
 
 Precedence:
 
@@ -52,7 +53,38 @@ Precedence:
 3. Global config
 4. Defaults
 
-Example global config:
+### Options (all keys)
+
+Top-level keys:
+
+- `vault_path` (required): absolute path to your Obsidian vault.
+- `recipes_dir` (default: `"Recipes"`): recipes folder inside the vault.
+- `cookbooks_dir` (default: `"Cookbooks"`): cookbooks folder inside the vault.
+- `default_project` (optional): project dir used when `--project` and `--profile` are not provided.
+- `build_dir` (default: `"build"`): build output folder inside the project.
+- `cache_dir` (default: `"cache"`): cache folder inside the project.
+- `tex_check` (default: `true`): run TeX dependency check at startup.
+- `tui_header_icon` (default: `"🍳"`): icon used in the TUI header.
+
+`[pandoc]` table:
+
+- `pdf_engine` (default: `"lualatex"`): LaTeX engine for PDF output.
+- `template` (default: `"templates/cookbook.tex"`): LaTeX template path (relative to project).
+- `lua_filter` (default: `"filters/recipe.lua"`): Lua filter path (relative to project).
+- `style_dir` (default: `"templates"`): directory of LaTeX styles/macros (relative to project).
+- `pandoc_path` (default: `"pandoc"`): pandoc binary name or full path.
+
+`[style]` table:
+
+- `theme` (default: `"menu-card"`): semantic theme name.
+
+Profile file (optional):
+
+- `project` (required): absolute path to the project directory for the profile.
+
+### Example global config
+
+Global config is a good place for your vault location and defaults that apply to all projects.
 
 ```toml
 vault_path = "/home/james/Obsidian/Vault"
@@ -68,6 +100,35 @@ pdf_engine = "lualatex"
 template = "templates/cookbook.tex"
 lua_filter = "filters/recipe.lua"
 style_dir = "templates"
+pandoc_path = "pandoc"
+
+[style]
+theme = "menu-card"
+```
+
+### Example project config
+
+Project config is a good place for build locations and template overrides.
+
+```toml
+build_dir = "build"
+cache_dir = "cache"
+
+[pandoc]
+template = "templates/cookbook.tex"
+lua_filter = "filters/recipe.lua"
+style_dir = "templates"
+
+[style]
+theme = "menu-card"
+```
+
+### Example profile config
+
+Profiles map a short name to a project directory.
+
+```toml
+project = "/home/james/CookbookProject"
 ```
 
 ## Authoring format

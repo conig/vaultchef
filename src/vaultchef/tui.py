@@ -60,13 +60,13 @@ class VaultchefApp(App):
     CSS = """
     Screen {
         padding: 1 2;
-        background: #F8F4EE;
-        color: #1C1A17;
+        background: $background;
+        color: $text;
     }
 
     Header, Footer {
-        background: #F2ECE3;
-        color: #1C1A17;
+        background: $panel;
+        color: $text;
     }
 
     Footer .footer--key,
@@ -75,12 +75,12 @@ class VaultchefApp(App):
     Footer .footer--binding,
     Footer Label,
     Footer * {
-        color: #1C1A17;
+        color: $text;
     }
 
     #title {
         text-style: bold;
-        color: #1C1A17;
+        color: $text;
     }
 
     #mode-actions {
@@ -99,15 +99,15 @@ class VaultchefApp(App):
 
     #tag-list, #recipe-list, #selected-list, #cookbook-list {
         height: 1fr;
-        border: round #D8C9B6;
-        background: #FDFBF7;
+        border: round $panel;
+        background: $surface;
     }
 
     ListView,
     ListView > ListItem,
     ListView > .list-item,
     ListView Label {
-        color: #1C1A17;
+        color: $text;
     }
 
     ListView > ListItem.--highlight,
@@ -115,8 +115,8 @@ class VaultchefApp(App):
     ListView > .list-item.--highlight,
     ListView > .list-item.-highlight,
     ListView > .list-item--highlight {
-        background: #E8DDCF;
-        color: #1C1A17;
+        background: $panel;
+        color: $text;
         text-style: bold;
     }
 
@@ -125,66 +125,66 @@ class VaultchefApp(App):
     ListView:focus > .list-item.--highlight,
     ListView:focus > .list-item.-highlight,
     ListView:focus > .list-item--highlight {
-        background: #9A7B4F;
-        color: #F8F4EE;
+        background: $primary;
+        color: $background;
     }
 
     ListView > ListItem.cookbook-selected {
-        background: #9A7B4F;
-        color: #F8F4EE;
+        background: $primary;
+        color: $background;
         text-style: bold;
     }
 
     #status {
         height: auto;
         padding: 1 0 0 0;
-        color: #5E4F42;
+        color: $text-muted;
     }
 
     #name-input, #search-input {
         margin: 0 0 1 0;
-        background: #FDFBF7;
-        border: round #D8C9B6;
-        color: #1C1A17;
+        background: $surface;
+        border: round $panel;
+        color: $text;
     }
 
     Button {
-        background: #F2ECE3;
-        color: #1C1A17;
-        border: round #D8C9B6;
+        background: $panel;
+        color: $text;
+        border: round $panel;
     }
 
     Button.-primary {
-        background: #9A7B4F;
-        color: #F8F4EE;
-        border: round #9A7B4F;
+        background: $primary;
+        color: $background;
+        border: round $primary;
     }
 
     Button:hover {
-        background: #E8DDCF;
+        background: $surface;
     }
 
     Button.-primary:hover {
-        background: #8C6F46;
+        background: $primary;
     }
 
     Button:focus {
-        background: #9A7B4F;
-        color: #F8F4EE;
-        border: round #9A7B4F;
+        background: $primary;
+        color: $background;
+        border: round $primary;
         text-style: none;
     }
 
     Button:focus > .button--label {
         background: transparent;
-        color: #F8F4EE;
+        color: $background;
         text-style: none;
     }
 
     Input {
-        background: #FDFBF7;
-        border: round #D8C9B6;
-        color: #1C1A17;
+        background: $surface;
+        border: round $panel;
+        color: $text;
     }
 
     #build-title {
