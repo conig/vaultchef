@@ -65,6 +65,7 @@ function RawBlock(el)
     else
       table.insert(blocks, pandoc.RawBlock("latex", "\\clearpage\n\\VaultChefPageStart\n"))
     end
+    table.insert(blocks, pandoc.RawBlock("latex", "\\markboth{}{}\n"))
     page_open = true
     return blocks
   end
@@ -84,20 +85,23 @@ function Header(el)
   local text = header_text(el)
   local lower = text:lower()
   if in_recipe and lower == "method" then
-    local blocks = {
-      pandoc.RawBlock("latex", "\\VaultChefPageEnd\n\\clearpage\n\\VaultChefPageStart\n"),
-      el,
-    }
+    local blocks = {}
+    table.insert(blocks, pandoc.RawBlock("latex", "\\VaultChefPageEnd\n\\clearpage\n\\VaultChefPageStart\n"))
+    if current_title then
+      local escaped = latex_escape(current_title)
+      table.insert(blocks, pandoc.RawBlock("latex", "\\markboth{" .. escaped .. "}{" .. escaped .. "}\n"))
+    end
+    table.insert(blocks, el)
     page_open = true
     return blocks
   end
   if in_recipe and not current_title and el.level == 2 and not RESERVED_HEADERS[lower] then
     current_title = text
+    return { el }
+  end
+  if in_recipe and el.level == 3 then
     local escaped = latex_escape(text)
-    return {
-      pandoc.RawBlock("latex", "\\markboth{" .. escaped .. "}{" .. escaped .. "}\n"),
-      el,
-    }
+    return pandoc.RawBlock("latex", "\\VaultChefSubsection{" .. escaped .. "}\n")
   end
   return nil
 end

@@ -87,13 +87,13 @@ Profile file (optional):
 Global config is a good place for your vault location and defaults that apply to all projects.
 
 ```toml
-vault_path = "/home/james/Obsidian/Vault"
+vault_path = "/home/user/Obsidian/Vault"
 recipes_dir = "Recipes"
 cookbooks_dir = "Cookbooks"
 tex_check = true
 tui_header_icon = "🍳"
 
-default_project = "/home/james/CookbookProject"
+default_project = "/home/user/CookbookProject"
 
 [pandoc]
 pdf_engine = "lualatex"
@@ -128,7 +128,7 @@ theme = "menu-card"
 Profiles map a short name to a project directory.
 
 ```toml
-project = "/home/james/CookbookProject"
+project = "/home/user/CookbookProject"
 ```
 
 ## Authoring format
@@ -146,6 +146,7 @@ Cookbook notes contain headings and embeds like:
 
 ```markdown
 # Desserts
+
 ![[Recipes/116 Lemon Tart]]
 ```
 
