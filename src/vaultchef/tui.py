@@ -19,8 +19,9 @@ from .tex import check_tex_dependencies, format_tex_report, install_tex_packages
 try:  # Textual is optional at import time for non-TUI usage.
     from textual.app import App, ComposeResult
     from textual.containers import Horizontal, Vertical
-    from textual.widgets import Button, Footer, Header, Input, Label, ListItem, ListView, Static
     from textual.screen import Screen
+    from textual.theme import Theme
+    from textual.widgets import Button, Footer, Header, Input, Label, ListItem, ListView, Static
 except Exception as exc:  # pragma: no cover
     raise ConfigError(
         "Textual is required for --tui. Install vaultchef with TUI dependencies."
@@ -28,6 +29,32 @@ except Exception as exc:  # pragma: no cover
 
 
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
+
+TUI_THEME_NAME = "vaultchef-ansi"
+
+TUI_THEMES = {
+    TUI_THEME_NAME: Theme(
+        name=TUI_THEME_NAME,
+        primary="ansi_bright_blue",
+        secondary="ansi_bright_cyan",
+        accent="ansi_bright_magenta",
+        warning="ansi_bright_yellow",
+        error="ansi_bright_red",
+        success="ansi_bright_green",
+        foreground="ansi_default",
+        background="ansi_default",
+        surface="ansi_default",
+        panel="ansi_bright_black",
+        dark=False,
+        variables={
+            "text": "ansi_default",
+            "text-muted": "ansi_bright_black",
+            "button-foreground": "ansi_default",
+            "button-color-foreground": "ansi_black",
+            "button-focus-text-style": "b",
+        },
+    )
+}
 
 
 @dataclass(frozen=True)
@@ -69,12 +96,30 @@ class VaultchefApp(App):
         color: $text;
     }
 
-    Footer .footer--key,
-    Footer .footer--description,
-    Footer .footer--highlight,
-    Footer .footer--binding,
-    Footer Label,
-    Footer * {
+    Footer {
+        background: $panel;
+        color: $text;
+    }
+
+    Footer:ansi {
+        background: $panel;
+        color: $text;
+    }
+
+    FooterKey,
+    FooterLabel,
+    Footer .footer-key--key,
+    Footer .footer-key--description,
+    Footer:ansi .footer-key--key,
+    Footer:ansi .footer-key--description,
+    Footer:ansi FooterKey,
+    Footer:ansi FooterLabel {
+        background: $panel;
+        color: $text;
+    }
+
+    Footer .footer-key--description,
+    FooterLabel {
         color: $text;
     }
 
@@ -126,12 +171,12 @@ class VaultchefApp(App):
     ListView:focus > .list-item.-highlight,
     ListView:focus > .list-item--highlight {
         background: $primary;
-        color: $background;
+        color: ansi_black;
     }
 
     ListView > ListItem.cookbook-selected {
         background: $primary;
-        color: $background;
+        color: ansi_black;
         text-style: bold;
     }
 
@@ -149,19 +194,19 @@ class VaultchefApp(App):
     }
 
     Button {
-        background: $panel;
+        background: $surface;
         color: $text;
         border: round $panel;
     }
 
     Button.-primary {
         background: $primary;
-        color: $background;
+        color: $button-color-foreground;
         border: round $primary;
     }
 
     Button:hover {
-        background: $surface;
+        background: $panel;
     }
 
     Button.-primary:hover {
@@ -170,14 +215,14 @@ class VaultchefApp(App):
 
     Button:focus {
         background: $primary;
-        color: $background;
+        color: $button-color-foreground;
         border: round $primary;
         text-style: none;
     }
 
     Button:focus > .button--label {
         background: transparent;
-        color: $background;
+        color: $button-color-foreground;
         text-style: none;
     }
 
@@ -211,19 +256,42 @@ class VaultchefApp(App):
     BINDINGS = [("q", "quit", "Quit")]
 
     def __init__(self, cfg: EffectiveConfig) -> None:
-        super().__init__()
+        super().__init__(ansi_color=True)
         self.cfg = cfg
+        self._theme_name = _resolve_tui_theme_name(cfg)
         self.vault = resolve_vault_paths(cfg)
         self.recipes = _load_recipes(cfg)
         self.tags = _unique_tags(self.recipes)
         self.cookbooks = _load_cookbooks(cfg)
 
     def on_mount(self) -> None:
+        self._apply_theme()
         self.push_screen(ModeScreen())
         if self.cfg.tex.check_on_startup:
             result = check_tex_dependencies(pdf_engine=self.cfg.pandoc.pdf_engine)
             if result.missing_binaries or result.missing_required or result.missing_optional:
                 self.push_screen(TexDepsScreen(result))
+
+    def _apply_theme(self) -> None:
+        theme_name = self._theme_name or TUI_THEME_NAME
+        theme = TUI_THEMES.get(theme_name)
+        if theme is not None and hasattr(self, "register_theme"):
+            try:
+                self.register_theme(theme)
+            except Exception:
+                pass
+        if hasattr(self, "theme"):
+            try:
+                self.theme = theme_name
+            except Exception:
+                pass
+        # Textual only enables ANSI passthrough for the built-in textual-ansi theme.
+        # Force ANSI passthrough so terminal palettes (foot themes) are respected.
+        if hasattr(self, "ansi_color"):
+            try:
+                self.ansi_color = True
+            except Exception:
+                pass
 
 
 def _header_icon(screen: Screen) -> str:
@@ -234,6 +302,11 @@ def _header_icon(screen: Screen) -> str:
         return "🍳"
     text = str(icon).strip()
     return text or "🍳"
+
+
+def _resolve_tui_theme_name(cfg: EffectiveConfig) -> str:
+    _ = cfg
+    return TUI_THEME_NAME
 
 
 class ModeScreen(Screen):

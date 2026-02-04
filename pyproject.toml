@@ -14,7 +14,7 @@ authors = [
 ]
 dependencies = [
   "PyYAML>=6.0",
-  "textual>=0.58",
+  "textual>=0.80",
 ]
 
 [project.optional-dependencies]
