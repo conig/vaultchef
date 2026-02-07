@@ -38,6 +38,12 @@ def test_cli_tui_flag(monkeypatch) -> None:
     assert cli.main(["--tui"]) == 0
 
 
+# Purpose: verify cli tui mode animation flag.
+def test_cli_tui_mode_animation_flag(monkeypatch) -> None:
+    monkeypatch.setattr("vaultchef.cli._cmd_tui", lambda *a, **k: 0)
+    assert cli.main(["--tui", "--tui-mode-animation", "off"]) == 0
+
+
 # Purpose: verify cmd tui invokes run.
 def test_cmd_tui_invokes_run(monkeypatch) -> None:
     calls = {}

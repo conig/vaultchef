@@ -30,7 +30,7 @@ Outputs land in `./build/`.
 ```bash
 vaultchef            # launches TUI by default
 vaultchef --tui
-vaultchef --tui-layout auto|compact|normal|wide --tui-density cozy|compact
+vaultchef --tui-layout auto|compact|normal|wide --tui-density cozy|compact --tui-mode-animation auto|on|off
 vaultchef build "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME] [--open] [--dry-run]
 vaultchef list [--vault PATH] [--tag TAG] [--category CATEGORY] [--json]
 vaultchef watch "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME]
@@ -68,6 +68,7 @@ Top-level keys:
 - `tui_header_icon` (default: `"🔪"`): icon used in the TUI header.
 - `tui_layout` (default: `"auto"`): `auto` or fixed `compact`/`normal`/`wide` TUI layout.
 - `tui_density` (default: `"cozy"`): spacing density (`cozy` or `compact`).
+- `tui_mode_animation` (default: `"auto"`): front-page hero animation behavior (`auto`, `on`, `off`).
 
 `[pandoc]` table:
 
@@ -97,6 +98,7 @@ tex_check = true
 tui_header_icon = "🔪"
 tui_layout = "auto"
 tui_density = "cozy"
+tui_mode_animation = "auto"
 
 default_project = "/home/user/CookbookProject"
 

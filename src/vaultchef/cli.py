@@ -76,6 +76,7 @@ def _build_parser() -> argparse.ArgumentParser:
     common.add_argument("--tui-header-icon")
     common.add_argument("--tui-layout")
     common.add_argument("--tui-density")
+    common.add_argument("--tui-mode-animation")
     common.add_argument("--recipes-dir")
     common.add_argument("--cookbooks-dir")
     common.add_argument("--build-dir")

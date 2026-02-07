@@ -109,6 +109,7 @@ style_dir = "templates"
     assert cfg.tui.header_icon == "🔪"
     assert cfg.tui.layout == "auto"
     assert cfg.tui.density == "cozy"
+    assert cfg.tui.mode_animation == "auto"
 
 
 # Purpose: verify resolve config profile.
@@ -139,6 +140,7 @@ def test_config_to_toml(temp_home: Path, tmp_path: Path) -> None:
     assert "tui_header_icon" in text
     assert "tui_layout" in text
     assert "tui_density" in text
+    assert "tui_mode_animation" in text
 
 
 # Purpose: verify resolve config tex check override.
@@ -177,13 +179,30 @@ def test_resolve_config_tui_layout_density_fallback(temp_home: Path, tmp_path: P
     assert cfg.tui.density == "cozy"
 
 
+# Purpose: verify resolve config tui mode animation.
+def test_resolve_config_tui_mode_animation(temp_home: Path, tmp_path: Path) -> None:
+    write_global_config(temp_home, "vault_path = '/vault'\ntui_mode_animation = 'ON'\n")
+    cfg = resolve_config({"project": str(tmp_path)})
+    assert cfg.tui.mode_animation == "on"
+
+
+# Purpose: verify resolve config tui mode animation fallback.
+def test_resolve_config_tui_mode_animation_fallback(temp_home: Path, tmp_path: Path) -> None:
+    write_global_config(temp_home, "vault_path = '/vault'\ntui_mode_animation = 'zoom'\n")
+    cfg = resolve_config({"project": str(tmp_path)})
+    assert cfg.tui.mode_animation == "auto"
+
+
 # Purpose: verify resolve config tui cli precedence.
 def test_resolve_config_tui_cli_precedence(temp_home: Path, tmp_path: Path) -> None:
-    write_global_config(temp_home, "vault_path = '/vault'\ntui_layout = 'normal'\ntui_density = 'cozy'\n")
+    write_global_config(
+        temp_home,
+        "vault_path = '/vault'\ntui_layout = 'normal'\ntui_density = 'cozy'\ntui_mode_animation = 'auto'\n",
+    )
     project_dir = tmp_path / "project"
     project_dir.mkdir()
     (project_dir / "vaultchef.toml").write_text(
-        "tui_layout = 'wide'\ntui_density = 'compact'\n",
+        "tui_layout = 'wide'\ntui_density = 'compact'\ntui_mode_animation = 'on'\n",
         encoding="utf-8",
     )
     cfg = resolve_config(
@@ -191,7 +210,9 @@ def test_resolve_config_tui_cli_precedence(temp_home: Path, tmp_path: Path) -> N
             "project": str(project_dir),
             "tui_layout": "compact",
             "tui_density": "cozy",
+            "tui_mode_animation": "off",
         }
     )
     assert cfg.tui.layout == "compact"
     assert cfg.tui.density == "cozy"
+    assert cfg.tui.mode_animation == "off"

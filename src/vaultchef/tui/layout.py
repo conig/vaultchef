@@ -8,6 +8,7 @@ CREATE_WIZARD_MIN_HEIGHT = 30
 
 VALID_LAYOUTS = {"auto", "compact", "normal", "wide"}
 VALID_DENSITIES = {"cozy", "compact"}
+VALID_MODE_ANIMATIONS = {"auto", "on", "off"}
 
 
 def normalize_layout_mode(mode: object) -> str:
@@ -22,6 +23,13 @@ def normalize_density(density: object) -> str:
     if text in VALID_DENSITIES:
         return text
     return "cozy"
+
+
+def normalize_mode_animation(mode_animation: object) -> str:
+    text = str(mode_animation or "").strip().lower()
+    if text in VALID_MODE_ANIMATIONS:
+        return text
+    return "auto"
 
 
 def resolve_layout_mode(width: int, height: int, requested_mode: object) -> str:
@@ -59,3 +67,19 @@ def build_progress_bar_width(viewport_width: int, layout_mode: str) -> int:
     else:
         limit = 28
     return max(16, min(limit, width - 24))
+
+
+def show_mode_hero(layout_mode: str, mode_animation: object) -> bool:
+    mode = normalize_mode_animation(mode_animation)
+    if mode == "on":
+        return True
+    return layout_mode == "wide"
+
+
+def should_animate_mode_hero(layout_mode: str, mode_animation: object) -> bool:
+    mode = normalize_mode_animation(mode_animation)
+    if mode == "off":
+        return False
+    if mode == "on":
+        return True
+    return layout_mode == "wide"

@@ -33,6 +33,7 @@ class TuiConfig:
     header_icon: str = "🔪"
     layout: str = "auto"
     density: str = "cozy"
+    mode_animation: str = "auto"
 
 
 @dataclass(frozen=True)
@@ -128,6 +129,7 @@ def resolve_config(cli_args: dict[str, Any]) -> EffectiveConfig:
     tui_icon = merged.get("tui_header_icon", "🔪")
     tui_layout = _normalize_tui_layout(merged.get("tui_layout", "auto"))
     tui_density = _normalize_tui_density(merged.get("tui_density", "cozy"))
+    tui_mode_animation = _normalize_tui_mode_animation(merged.get("tui_mode_animation", "auto"))
 
     return EffectiveConfig(
         vault_path=str(vault_path),
@@ -149,6 +151,7 @@ def resolve_config(cli_args: dict[str, Any]) -> EffectiveConfig:
             header_icon=str(tui_icon),
             layout=tui_layout,
             density=tui_density,
+            mode_animation=tui_mode_animation,
         ),
         project_dir=str(project_dir),
     )
@@ -180,7 +183,7 @@ def _cli_to_dict(cli_args: dict[str, Any]) -> dict[str, Any]:
     if style:
         out["style"] = style
 
-    for key in ("tui_header_icon", "tui_layout", "tui_density"):
+    for key in ("tui_header_icon", "tui_layout", "tui_density", "tui_mode_animation"):
         if cli_args.get(key) is not None:
             out[key] = cli_args[key]
 
@@ -201,6 +204,7 @@ def config_to_toml(cfg: EffectiveConfig) -> str:
     lines.append(f"tui_header_icon = {cfg.tui.header_icon!r}")
     lines.append(f"tui_layout = {cfg.tui.layout!r}")
     lines.append(f"tui_density = {cfg.tui.density!r}")
+    lines.append(f"tui_mode_animation = {cfg.tui.mode_animation!r}")
     lines.append("")
     lines.append("[pandoc]")
     lines.append(f"pdf_engine = {cfg.pandoc.pdf_engine!r}")
@@ -226,3 +230,10 @@ def _normalize_tui_density(value: Any) -> str:
     if text in {"cozy", "compact"}:
         return text
     return "cozy"
+
+
+def _normalize_tui_mode_animation(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    if text in {"auto", "on", "off"}:
+        return text
+    return "auto"

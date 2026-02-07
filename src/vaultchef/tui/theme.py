@@ -81,6 +81,18 @@ FooterLabel {
     color: $text;
 }
 
+#mode-hero {
+    height: auto;
+    align: center middle;
+    padding: 1 0 0 0;
+}
+
+#mode-pot {
+    height: auto;
+    color: ansi_bright_cyan;
+    text-style: bold;
+}
+
 #mode-actions {
     height: auto;
     align: center middle;

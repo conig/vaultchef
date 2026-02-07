@@ -5,7 +5,10 @@ from vaultchef.tui.layout import (
     centered_card_width,
     normalize_density,
     normalize_layout_mode,
+    normalize_mode_animation,
     resolve_layout_mode,
+    should_animate_mode_hero,
+    show_mode_hero,
     use_create_wizard,
 )
 
@@ -20,6 +23,12 @@ def test_normalize_layout_mode() -> None:
 def test_normalize_density() -> None:
     assert normalize_density("COMPACT") == "compact"
     assert normalize_density("dense") == "cozy"
+
+
+# Purpose: verify normalize mode animation.
+def test_normalize_mode_animation() -> None:
+    assert normalize_mode_animation("ON") == "on"
+    assert normalize_mode_animation("later") == "auto"
 
 
 # Purpose: verify resolve layout mode auto thresholds.
@@ -55,3 +64,16 @@ def test_build_progress_bar_width_bounds() -> None:
     assert build_progress_bar_width(120, "normal") == 40
     assert build_progress_bar_width(70, "compact") <= 28
     assert build_progress_bar_width(20, "compact") == 16
+
+
+# Purpose: verify mode hero visibility and animation behavior.
+def test_mode_hero_behavior() -> None:
+    assert show_mode_hero("wide", "auto") is True
+    assert show_mode_hero("normal", "auto") is False
+    assert show_mode_hero("compact", "on") is True
+    assert show_mode_hero("compact", "off") is False
+
+    assert should_animate_mode_hero("wide", "auto") is True
+    assert should_animate_mode_hero("normal", "auto") is False
+    assert should_animate_mode_hero("normal", "on") is True
+    assert should_animate_mode_hero("wide", "off") is False
