@@ -5,52 +5,52 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Callable
 
 from .build import build_cookbook
-from .config import resolve_config, config_to_toml, EffectiveConfig
+from .config import EffectiveConfig, config_to_toml, resolve_config
 from .errors import (
-    VaultchefError,
     ConfigError,
     MissingFileError,
-    ValidationError,
     PandocError,
+    ValidationError,
+    VaultchefError,
     WatchError,
 )
 from .listing import list_recipes
 from .templates import (
-    render_recipe_template,
     render_cookbook_template,
+    render_recipe_template,
     write_template_file,
 )
-from .watch import watch_cookbook
 from .tex import check_tex_dependencies, format_tex_report, install_tex_packages
+from .watch import watch_cookbook
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
-    if args.tui:
-        return _cmd_tui(args)
-    if not args.command:
+
+    if args.tui or not args.command:
         return _cmd_tui(args)
 
+    handlers: dict[str, Callable[[argparse.Namespace], int]] = {
+        "build": _cmd_build,
+        "list": _cmd_list,
+        "watch": _cmd_watch,
+        "new-recipe": _cmd_new_recipe,
+        "new-cookbook": _cmd_new_cookbook,
+        "init": _cmd_init,
+        "config": _cmd_config,
+        "tex-check": _cmd_tex_check,
+    }
+
+    handler = handlers.get(args.command)
+    if handler is None:  # pragma: no cover
+        return 1  # pragma: no cover
+
     try:
-        if args.command == "build":
-            return _cmd_build(args)
-        if args.command == "list":
-            return _cmd_list(args)
-        if args.command == "watch":
-            return _cmd_watch(args)
-        if args.command == "new-recipe":
-            return _cmd_new_recipe(args)
-        if args.command == "new-cookbook":
-            return _cmd_new_cookbook(args)
-        if args.command == "init":
-            return _cmd_init(args)
-        if args.command == "config":
-            return _cmd_config(args)
-        if args.command == "tex-check":
-            return _cmd_tex_check(args)
+        return handler(args)
     except VaultchefError as exc:
         print(str(exc), file=sys.stderr)
         return _exit_code(exc)
@@ -60,7 +60,6 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:  # pragma: no cover
         print(str(exc), file=sys.stderr)
         return 1
-    return 0  # pragma: no cover
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -74,6 +73,9 @@ def _build_parser() -> argparse.ArgumentParser:
     common.add_argument("--lua-filter", dest="lua_filter")
     common.add_argument("--style-dir", dest="style_dir")
     common.add_argument("--theme")
+    common.add_argument("--tui-header-icon")
+    common.add_argument("--tui-layout")
+    common.add_argument("--tui-density")
     common.add_argument("--recipes-dir")
     common.add_argument("--cookbooks-dir")
     common.add_argument("--build-dir")
@@ -122,7 +124,7 @@ def _build_parser() -> argparse.ArgumentParser:
     init.add_argument("path", nargs="?", default=".")
     init.add_argument("--force", action="store_true")
 
-    config = sub.add_parser("config", parents=[common])
+    sub.add_parser("config", parents=[common])
     sub.add_parser("tex-check", parents=[common])
 
     return parser
@@ -197,7 +199,9 @@ def _cmd_init(args: argparse.Namespace) -> int:
     if os.path.exists(config_path) and not args.force:
         raise ConfigError(f"{config_path} already exists (use --force to overwrite)")
     with open(config_path, "w", encoding="utf-8") as fh:
-        fh.write("""build_dir = \"build\"\ncache_dir = \"cache\"\n\n[pandoc]\n# template = \"templates/cookbook.tex\"\n# lua_filter = \"filters/recipe.lua\"\n# style_dir = \"templates\"\n\n[style]\n# theme = \"menu-card\"\n""")
+        fh.write(
+            """build_dir = \"build\"\ncache_dir = \"cache\"\n\n[pandoc]\n# template = \"templates/cookbook.tex\"\n# lua_filter = \"filters/recipe.lua\"\n# style_dir = \"templates\"\n\n[style]\n# theme = \"menu-card\"\n"""
+        )
     return 0
 
 
@@ -219,6 +223,7 @@ def _cmd_tex_check(args: argparse.Namespace) -> int:
     result = check_tex_dependencies(pdf_engine=args.pdf_engine)
     for line in format_tex_report(result):
         print(line)
+
     missing = result.missing_required + result.missing_optional
     if missing and result.checked_packages:
         answer = input("Install missing TeX packages with tlmgr? [y/N]: ").strip().lower()
@@ -240,6 +245,7 @@ def _maybe_warn_tex(cfg: EffectiveConfig) -> None:
     result = check_tex_dependencies(pdf_engine=cfg.pandoc.pdf_engine)
     if not (result.missing_binaries or result.missing_required or result.missing_optional):
         return
+
     for line in format_tex_report(result):
         print(line, file=sys.stderr)
     print("Run `vaultchef tex-check` to install missing packages.", file=sys.stderr)
@@ -256,8 +262,7 @@ def _ensure_dir(root: str, name: str) -> None:
 
 
 def _cli_args_dict(args: argparse.Namespace) -> dict[str, object]:
-    data = vars(args).copy()
-    return data
+    return vars(args).copy()
 
 
 def _open_file(path: str) -> None:

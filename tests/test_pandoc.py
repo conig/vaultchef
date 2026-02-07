@@ -17,6 +17,7 @@ def _write_script(tmp_path: Path, content: str) -> Path:
     return script
 
 
+# Purpose: verify run pandoc success verbose.
 def test_run_pandoc_success_verbose(tmp_path: Path, temp_home: Path, capsys) -> None:
     script = _write_script(
         tmp_path,
@@ -42,6 +43,7 @@ if out:
     assert output_pdf.read_bytes().startswith(b"%PDF-1.4")
 
 
+# Purpose: verify run pandoc texinputs prepends.
 def test_run_pandoc_texinputs_prepends(tmp_path: Path, temp_home: Path, monkeypatch) -> None:
     script = _write_script(
         tmp_path,
@@ -80,6 +82,7 @@ if out:
     assert texinputs.startswith(str(templates) + os.pathsep)
 
 
+# Purpose: verify run pandoc resource paths.
 def test_run_pandoc_resource_paths(tmp_path: Path, temp_home: Path, monkeypatch) -> None:
     script = _write_script(
         tmp_path,
@@ -121,6 +124,7 @@ if out:
     assert str(extra) in paths
 
 
+# Purpose: verify run pandoc missing.
 def test_run_pandoc_missing(tmp_path: Path, temp_home: Path) -> None:
     input_md = tmp_path / "in.md"
     input_md.write_text("# Hi\n", encoding="utf-8")
@@ -129,6 +133,7 @@ def test_run_pandoc_missing(tmp_path: Path, temp_home: Path) -> None:
         run_pandoc(str(input_md), str(tmp_path / "out.pdf"), cfg, verbose=False)
 
 
+# Purpose: verify run pandoc failure.
 def test_run_pandoc_failure(tmp_path: Path, temp_home: Path) -> None:
     script = _write_script(
         tmp_path,

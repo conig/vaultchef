@@ -30,7 +30,9 @@ class TexConfig:
 
 @dataclass(frozen=True)
 class TuiConfig:
-    header_icon: str = "🍳"
+    header_icon: str = "🔪"
+    layout: str = "auto"
+    density: str = "cozy"
 
 
 @dataclass(frozen=True)
@@ -123,7 +125,9 @@ def resolve_config(cli_args: dict[str, Any]) -> EffectiveConfig:
     pandoc_cfg = merged.get("pandoc", {})
     style_cfg = merged.get("style", {})
     tex_check = merged.get("tex_check", True)
-    tui_icon = merged.get("tui_header_icon", "🍳")
+    tui_icon = merged.get("tui_header_icon", "🔪")
+    tui_layout = _normalize_tui_layout(merged.get("tui_layout", "auto"))
+    tui_density = _normalize_tui_density(merged.get("tui_density", "cozy"))
 
     return EffectiveConfig(
         vault_path=str(vault_path),
@@ -141,7 +145,11 @@ def resolve_config(cli_args: dict[str, Any]) -> EffectiveConfig:
         ),
         style=StyleConfig(theme=str(style_cfg.get("theme", "menu-card"))),
         tex=TexConfig(check_on_startup=bool(tex_check)),
-        tui=TuiConfig(header_icon=str(tui_icon)),
+        tui=TuiConfig(
+            header_icon=str(tui_icon),
+            layout=tui_layout,
+            density=tui_density,
+        ),
         project_dir=str(project_dir),
     )
 
@@ -172,6 +180,10 @@ def _cli_to_dict(cli_args: dict[str, Any]) -> dict[str, Any]:
     if style:
         out["style"] = style
 
+    for key in ("tui_header_icon", "tui_layout", "tui_density"):
+        if cli_args.get(key) is not None:
+            out[key] = cli_args[key]
+
     return out
 
 
@@ -187,6 +199,8 @@ def config_to_toml(cfg: EffectiveConfig) -> str:
     lines.append(f"cache_dir = {cfg.cache_dir!r}")
     lines.append(f"tex_check = {cfg.tex.check_on_startup!r}")
     lines.append(f"tui_header_icon = {cfg.tui.header_icon!r}")
+    lines.append(f"tui_layout = {cfg.tui.layout!r}")
+    lines.append(f"tui_density = {cfg.tui.density!r}")
     lines.append("")
     lines.append("[pandoc]")
     lines.append(f"pdf_engine = {cfg.pandoc.pdf_engine!r}")
@@ -198,3 +212,17 @@ def config_to_toml(cfg: EffectiveConfig) -> str:
     lines.append("[style]")
     lines.append(f"theme = {cfg.style.theme!r}")
     return "\n".join(lines) + "\n"
+
+
+def _normalize_tui_layout(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    if text in {"auto", "compact", "normal", "wide"}:
+        return text
+    return "auto"
+
+
+def _normalize_tui_density(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    if text in {"cozy", "compact"}:
+        return text
+    return "cozy"

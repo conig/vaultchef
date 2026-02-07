@@ -6,6 +6,7 @@ from vaultchef.config import resolve_config
 from vaultchef.listing import list_recipes
 
 
+# Purpose: verify list recipes filters.
 def test_list_recipes_filters(example_vault: Path, tmp_path: Path, temp_home: Path) -> None:
     cfg = resolve_config({"vault_path": str(example_vault), "project": str(tmp_path)})
     all_recipes = list_recipes(cfg, None, None)
@@ -16,6 +17,7 @@ def test_list_recipes_filters(example_vault: Path, tmp_path: Path, temp_home: Pa
     assert len(mains) == 1
 
 
+# Purpose: verify list recipes missing dir.
 def test_list_recipes_missing_dir(tmp_path: Path, temp_home: Path) -> None:
     vault = tmp_path / "Vault"
     vault.mkdir()
@@ -23,6 +25,7 @@ def test_list_recipes_missing_dir(tmp_path: Path, temp_home: Path) -> None:
     assert list_recipes(cfg, None, None) == []
 
 
+# Purpose: verify list recipes skips bad files.
 def test_list_recipes_skips_bad_files(tmp_path: Path, temp_home: Path) -> None:
     vault = tmp_path / "Vault"
     recipes = vault / "Recipes"
@@ -34,6 +37,7 @@ def test_list_recipes_skips_bad_files(tmp_path: Path, temp_home: Path) -> None:
     assert list_recipes(cfg, None, None) == []
 
 
+# Purpose: verify list recipes tags string.
 def test_list_recipes_tags_string(tmp_path: Path, temp_home: Path) -> None:
     vault = tmp_path / "Vault"
     recipes = vault / "Recipes"
@@ -51,6 +55,7 @@ tags: baking
     assert len(list_recipes(cfg, "baking", None)) == 1
 
 
+# Purpose: verify list recipes unreadable file.
 def test_list_recipes_unreadable_file(tmp_path: Path, temp_home: Path) -> None:
     vault = tmp_path / "Vault"
     recipes = vault / "Recipes"

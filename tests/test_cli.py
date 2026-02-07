@@ -15,6 +15,7 @@ from vaultchef.errors import ConfigError, MissingFileError, ValidationError, Pan
 from tests.utils import write_global_config
 
 
+# Purpose: verify cli no command.
 def test_cli_no_command() -> None:
     called = {}
 
@@ -31,11 +32,13 @@ def test_cli_no_command() -> None:
         monkeypatch.undo()
 
 
+# Purpose: verify cli tui flag.
 def test_cli_tui_flag(monkeypatch) -> None:
     monkeypatch.setattr("vaultchef.cli._cmd_tui", lambda *a, **k: 0)
     assert cli.main(["--tui"]) == 0
 
 
+# Purpose: verify cmd tui invokes run.
 def test_cmd_tui_invokes_run(monkeypatch) -> None:
     calls = {}
 
@@ -63,6 +66,7 @@ def test_cmd_tui_invokes_run(monkeypatch) -> None:
     assert calls["args"] == {}
 
 
+# Purpose: verify cmd tex check skips install.
 def test_cmd_tex_check_skips_install(monkeypatch, capsys) -> None:
     result = TexCheckResult(
         missing_required=["geometry"],
@@ -81,6 +85,7 @@ def test_cmd_tex_check_skips_install(monkeypatch, capsys) -> None:
     assert "Missing required packages" in capsys.readouterr().out
 
 
+# Purpose: verify cmd tex check installs.
 def test_cmd_tex_check_installs(monkeypatch) -> None:
     result = TexCheckResult(
         missing_required=["geometry"],
@@ -98,6 +103,7 @@ def test_cmd_tex_check_installs(monkeypatch) -> None:
     assert called["pkgs"] == ["geometry", "fancyhdr"]
 
 
+# Purpose: verify cli tex check command.
 def test_cli_tex_check_command(monkeypatch) -> None:
     result = TexCheckResult(
         missing_required=[],
@@ -111,6 +117,7 @@ def test_cli_tex_check_command(monkeypatch) -> None:
     assert rc == 0
 
 
+# Purpose: verify warn tex disabled.
 def test_warn_tex_disabled(monkeypatch, capsys) -> None:
     cfg = EffectiveConfig(
         vault_path="/v",
@@ -130,6 +137,7 @@ def test_warn_tex_disabled(monkeypatch, capsys) -> None:
     assert capsys.readouterr().err == ""
 
 
+# Purpose: verify warn tex prints.
 def test_warn_tex_prints(monkeypatch, capsys) -> None:
     cfg = EffectiveConfig(
         vault_path="/v",
@@ -159,6 +167,7 @@ def test_warn_tex_prints(monkeypatch, capsys) -> None:
     assert "tex_check = false" in err
 
 
+# Purpose: verify cli new recipe.
 def test_cli_new_recipe(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     rc = cli.main(["new-recipe", "--id", "1", "--title", "Test"])
@@ -166,6 +175,7 @@ def test_cli_new_recipe(tmp_path: Path, monkeypatch) -> None:
     assert (tmp_path / "Test.md").exists()
 
 
+# Purpose: verify cli new recipe file exists.
 def test_cli_new_recipe_file_exists(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / "Test.md").write_text("x", encoding="utf-8")
@@ -173,6 +183,7 @@ def test_cli_new_recipe_file_exists(tmp_path: Path, monkeypatch) -> None:
     assert rc == 1
 
 
+# Purpose: verify cli new cookbook.
 def test_cli_new_cookbook(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     rc = cli.main(["new-cookbook", "--title", "Book"])
@@ -180,6 +191,7 @@ def test_cli_new_cookbook(tmp_path: Path, monkeypatch) -> None:
     assert (tmp_path / "Book.md").exists()
 
 
+# Purpose: verify cli config prints.
 def test_cli_config_prints(temp_home: Path, tmp_path: Path, capsys) -> None:
     write_global_config(temp_home, "vault_path = '/vault'\n")
     rc = cli.main(["config", "--project", str(tmp_path)])
@@ -188,16 +200,19 @@ def test_cli_config_prints(temp_home: Path, tmp_path: Path, capsys) -> None:
     assert "vault_path" in out
 
 
+# Purpose: verify cli config error.
 def test_cli_config_error(temp_home: Path) -> None:
     rc = cli.main(["config"])
     assert rc == 2
 
 
+# Purpose: verify cli build dry run.
 def test_cli_build_dry_run(example_vault: Path, tmp_path: Path, temp_home: Path) -> None:
     rc = cli.main(["build", "Family Cookbook", "--vault", str(example_vault), "--project", str(tmp_path), "--dry-run"])
     assert rc == 0
 
 
+# Purpose: verify cli build creates pdf.
 def test_cli_build_creates_pdf(example_vault: Path, tmp_path: Path, temp_home: Path, monkeypatch) -> None:
     cwd = tmp_path / "cwd"
     cwd.mkdir()
@@ -234,11 +249,13 @@ if out:
     assert (cwd / "Family Cookbook.pdf").exists()
 
 
+# Purpose: verify cli build missing.
 def test_cli_build_missing(example_vault: Path, tmp_path: Path, temp_home: Path) -> None:
     rc = cli.main(["build", "Missing", "--vault", str(example_vault), "--project", str(tmp_path), "--dry-run"])
     assert rc == 3
 
 
+# Purpose: verify cli build open.
 def test_cli_build_open(monkeypatch) -> None:
     class Dummy:
         pdf = "out.pdf"
@@ -255,6 +272,7 @@ def test_cli_build_open(monkeypatch) -> None:
     assert opened["path"] == "out.pdf"
 
 
+# Purpose: verify cli list json.
 def test_cli_list_json(example_vault: Path, tmp_path: Path, temp_home: Path, capsys) -> None:
     rc = cli.main(["list", "--vault", str(example_vault), "--project", str(tmp_path), "--json"])
     assert rc == 0
@@ -262,6 +280,7 @@ def test_cli_list_json(example_vault: Path, tmp_path: Path, temp_home: Path, cap
     assert out.strip().startswith("[")
 
 
+# Purpose: verify cli list text.
 def test_cli_list_text(example_vault: Path, tmp_path: Path, temp_home: Path, capsys) -> None:
     rc = cli.main(["list", "--vault", str(example_vault), "--project", str(tmp_path)])
     assert rc == 0
@@ -269,24 +288,28 @@ def test_cli_list_text(example_vault: Path, tmp_path: Path, temp_home: Path, cap
     assert "Lemon Tart" in out
 
 
+# Purpose: verify cli watch.
 def test_cli_watch(monkeypatch) -> None:
     monkeypatch.setattr("vaultchef.cli.watch_cookbook", lambda *a, **k: None)
     rc = cli.main(["watch", "X", "--vault", "/v", "--project", "/p"])
     assert rc == 0
 
 
+# Purpose: verify cli init.
 def test_cli_init(tmp_path: Path) -> None:
     rc = cli.main(["init", str(tmp_path)])
     assert rc == 0
     assert (tmp_path / "vaultchef.toml").exists()
 
 
+# Purpose: verify cli init existing.
 def test_cli_init_existing(tmp_path: Path) -> None:
     (tmp_path / "vaultchef.toml").write_text("x", encoding="utf-8")
     rc = cli.main(["init", str(tmp_path)])
     assert rc == 2
 
 
+# Purpose: verify open file error.
 def test_open_file_error(monkeypatch) -> None:
     def boom(*args, **kwargs):
         raise RuntimeError("nope")
@@ -296,6 +319,7 @@ def test_open_file_error(monkeypatch) -> None:
         cli._open_file("x")
 
 
+# Purpose: verify exit code mapping.
 def test_exit_code_mapping() -> None:
     assert cli._exit_code(ConfigError("x")) == 2
     assert cli._exit_code(MissingFileError("x")) == 3
@@ -305,6 +329,7 @@ def test_exit_code_mapping() -> None:
     assert cli._exit_code(VaultchefError("x")) == 1
 
 
+# Purpose: verify main generic exception.
 def test_main_generic_exception(monkeypatch) -> None:
     def boom(*args, **kwargs):
         raise ValueError("oops")

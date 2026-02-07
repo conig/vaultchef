@@ -30,6 +30,7 @@ Outputs land in `./build/`.
 ```bash
 vaultchef            # launches TUI by default
 vaultchef --tui
+vaultchef --tui-layout auto|compact|normal|wide --tui-density cozy|compact
 vaultchef build "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME] [--open] [--dry-run]
 vaultchef list [--vault PATH] [--tag TAG] [--category CATEGORY] [--json]
 vaultchef watch "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME]
@@ -64,7 +65,9 @@ Top-level keys:
 - `build_dir` (default: `"build"`): build output folder inside the project.
 - `cache_dir` (default: `"cache"`): cache folder inside the project.
 - `tex_check` (default: `true`): run TeX dependency check at startup.
-- `tui_header_icon` (default: `"🍳"`): icon used in the TUI header.
+- `tui_header_icon` (default: `"🔪"`): icon used in the TUI header.
+- `tui_layout` (default: `"auto"`): `auto` or fixed `compact`/`normal`/`wide` TUI layout.
+- `tui_density` (default: `"cozy"`): spacing density (`cozy` or `compact`).
 
 `[pandoc]` table:
 
@@ -91,7 +94,9 @@ vault_path = "/home/user/Obsidian/Vault"
 recipes_dir = "Recipes"
 cookbooks_dir = "Cookbooks"
 tex_check = true
-tui_header_icon = "🍳"
+tui_header_icon = "🔪"
+tui_layout = "auto"
+tui_density = "cozy"
 
 default_project = "/home/user/CookbookProject"
 

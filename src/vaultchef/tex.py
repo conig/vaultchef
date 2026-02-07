@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import shutil
 import subprocess
-from typing import Iterable, Sequence
+from typing import Sequence
 
 from .errors import ConfigError
 
@@ -85,7 +85,9 @@ def install_tex_packages(packages: Sequence[str]) -> None:
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as exc:
-        raise ConfigError(f"tlmgr failed: {exc.stderr or exc.stdout}") from exc
+        stderr = exc.stderr
+        stdout = exc.stdout
+        raise ConfigError(f"tlmgr failed: {stderr or stdout}") from exc
 
 
 def _has_binary(name: str) -> bool:

@@ -3,11 +3,11 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from .config import EffectiveConfig
-from .paths import resolve_vault_paths
-from .expand import EMBED_RE, resolve_embed_path
 from .build import build_cookbook
+from .config import EffectiveConfig
 from .errors import MissingFileError, WatchError
+from .expand import EMBED_RE, resolve_embed_path
+from .paths import resolve_vault_paths
 
 
 def watch_cookbook(
@@ -35,6 +35,7 @@ def watch_cookbook(
                 raise WatchError(str(exc)) from exc
             watched = _collect_watch_paths(cookbook_path, vault.vault_root)
             mtimes = _snapshot_mtimes(watched)
+
         cycles += 1
         if max_cycles is not None and cycles >= max_cycles:
             break

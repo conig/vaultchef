@@ -23,6 +23,7 @@ def _write_vault(tmp_path: Path) -> Path:
     return vault
 
 
+# Purpose: verify collect watch paths.
 def test_collect_watch_paths(tmp_path: Path) -> None:
     vault = _write_vault(tmp_path)
     cookbook = vault / "Cookbooks" / "Book.md"
@@ -30,6 +31,7 @@ def test_collect_watch_paths(tmp_path: Path) -> None:
     assert cookbook in paths
 
 
+# Purpose: verify changed detection.
 def test_changed_detection(tmp_path: Path) -> None:
     vault = _write_vault(tmp_path)
     cookbook = vault / "Cookbooks" / "Book.md"
@@ -41,17 +43,20 @@ def test_changed_detection(tmp_path: Path) -> None:
     assert _changed(mtimes) is True
 
 
+# Purpose: verify changed detection missing path.
 def test_changed_detection_missing_path(tmp_path: Path) -> None:
     missing = tmp_path / "missing.md"
     assert _changed({missing: 0.0}) is True
 
 
+# Purpose: verify watch cookbook single cycle.
 def test_watch_cookbook_single_cycle(tmp_path: Path, temp_home: Path) -> None:
     vault = _write_vault(tmp_path)
     cfg = resolve_config({"vault_path": str(vault), "project": str(tmp_path), "pandoc_path": "true"})
     watch_cookbook("Book", cfg, debounce_ms=1, verbose=False, max_cycles=1)
 
 
+# Purpose: verify watch cookbook missing.
 def test_watch_cookbook_missing(tmp_path: Path, temp_home: Path) -> None:
     vault = tmp_path / "Vault"
     vault.mkdir()
@@ -60,6 +65,7 @@ def test_watch_cookbook_missing(tmp_path: Path, temp_home: Path) -> None:
         watch_cookbook("Missing", cfg, debounce_ms=1, verbose=False, max_cycles=1)
 
 
+# Purpose: verify watch cookbook change triggers build.
 def test_watch_cookbook_change_triggers_build(tmp_path: Path, temp_home: Path, monkeypatch) -> None:
     vault = _write_vault(tmp_path)
     cfg = resolve_config({"vault_path": str(vault), "project": str(tmp_path), "pandoc_path": "true"})
@@ -75,6 +81,7 @@ def test_watch_cookbook_change_triggers_build(tmp_path: Path, temp_home: Path, m
     assert calls
 
 
+# Purpose: verify watch cookbook build error.
 def test_watch_cookbook_build_error(tmp_path: Path, temp_home: Path, monkeypatch) -> None:
     vault = _write_vault(tmp_path)
     cfg = resolve_config({"vault_path": str(vault), "project": str(tmp_path), "pandoc_path": "true"})

@@ -9,6 +9,7 @@ from vaultchef.errors import ConfigError
 from vaultchef.tex import check_tex_dependencies, format_tex_report, install_tex_packages
 
 
+# Purpose: verify check tex dependencies all present.
 def test_check_tex_dependencies_all_present(monkeypatch) -> None:
     monkeypatch.setattr(tex, "_has_binary", lambda name: True)
     monkeypatch.setattr(tex, "_has_tex_package", lambda name: True)
@@ -20,6 +21,7 @@ def test_check_tex_dependencies_all_present(monkeypatch) -> None:
     assert format_tex_report(result) == ["TeX dependencies OK."]
 
 
+# Purpose: verify check tex dependencies missing kpsewhich.
 def test_check_tex_dependencies_missing_kpsewhich(monkeypatch) -> None:
     def has_binary(name: str) -> bool:
         return False if name == "kpsewhich" else True
@@ -33,6 +35,7 @@ def test_check_tex_dependencies_missing_kpsewhich(monkeypatch) -> None:
     assert "Package checks skipped" in lines[-1]
 
 
+# Purpose: verify check tex dependencies missing packages.
 def test_check_tex_dependencies_missing_packages(monkeypatch) -> None:
     monkeypatch.setattr(tex, "_has_binary", lambda name: True)
 
@@ -45,6 +48,7 @@ def test_check_tex_dependencies_missing_packages(monkeypatch) -> None:
     assert "fancyhdr" in result.missing_optional
 
 
+# Purpose: verify check tex dependencies missing engine.
 def test_check_tex_dependencies_missing_engine(monkeypatch) -> None:
     def has_binary(name: str) -> bool:
         return name != "xelatex"
@@ -55,6 +59,7 @@ def test_check_tex_dependencies_missing_engine(monkeypatch) -> None:
     assert "xelatex" in result.missing_binaries
 
 
+# Purpose: verify format tex report missing packages.
 def test_format_tex_report_missing_packages() -> None:
     result = tex.TexCheckResult(
         missing_required=["geometry"],
@@ -67,16 +72,19 @@ def test_format_tex_report_missing_packages() -> None:
     assert "Missing optional packages" in lines[1]
 
 
+# Purpose: verify install tex packages missing tlmgr.
 def test_install_tex_packages_missing_tlmgr(monkeypatch) -> None:
     monkeypatch.setattr(tex, "_has_binary", lambda name: False)
     with pytest.raises(ConfigError):
         install_tex_packages(["geometry"])
 
 
+# Purpose: verify install tex packages noop.
 def test_install_tex_packages_noop() -> None:
     install_tex_packages([])
 
 
+# Purpose: verify install tex packages runs.
 def test_install_tex_packages_runs(monkeypatch) -> None:
     monkeypatch.setattr(tex, "_has_binary", lambda name: True)
     called = {}
@@ -90,6 +98,7 @@ def test_install_tex_packages_runs(monkeypatch) -> None:
     assert called["cmd"] == ["tlmgr", "install", "geometry", "xcolor"]
 
 
+# Purpose: verify install tex packages failure.
 def test_install_tex_packages_failure(monkeypatch) -> None:
     monkeypatch.setattr(tex, "_has_binary", lambda name: True)
 
@@ -101,6 +110,7 @@ def test_install_tex_packages_failure(monkeypatch) -> None:
         install_tex_packages(["geometry"])
 
 
+# Purpose: verify has binary.
 def test_has_binary(monkeypatch) -> None:
     monkeypatch.setattr(tex.shutil, "which", lambda name: "/bin/yes")
     assert tex._has_binary("yes") is True
@@ -108,6 +118,7 @@ def test_has_binary(monkeypatch) -> None:
     assert tex._has_binary("nope") is False
 
 
+# Purpose: verify has tex package.
 def test_has_tex_package(monkeypatch) -> None:
     def fake_run(cmd, check, capture_output, text):
         return subprocess.CompletedProcess(cmd, 0, "/path/package.sty\n", "")

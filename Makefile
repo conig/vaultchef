@@ -1,7 +1,7 @@
-.PHONY: help install test lint
+.PHONY: help install test lint typecheck check
 
 help:
-	@echo "Targets: install test"
+	@echo "Targets: install test lint typecheck check"
 
 install:
 	python -m venv .venv
@@ -9,3 +9,11 @@ install:
 
 test:
 	. .venv/bin/activate && pytest
+
+lint:
+	. .venv/bin/activate && ruff check .
+
+typecheck:
+	. .venv/bin/activate && mypy src/vaultchef
+
+check: test lint typecheck

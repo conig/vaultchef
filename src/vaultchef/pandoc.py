@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import os
-import subprocess
 from pathlib import Path
 
 from .config import EffectiveConfig
-from .paths import resolve_project_paths
 from .errors import PandocError
+from .infra import run_process
+from .paths import resolve_project_paths
 
 
 def run_pandoc(
@@ -19,9 +19,8 @@ def run_pandoc(
 ) -> None:
     paths = resolve_project_paths(cfg)
     output_dir = Path(output_pdf).parent
-    texmf_cache = output_dir
-    texmf_var = output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
+
     resource_paths = [str(paths.style_dir)]
     if extra_resource_paths:
         for path in extra_resource_paths:
@@ -47,21 +46,32 @@ def run_pandoc(
     if extra_metadata:
         for key, value in extra_metadata.items():
             cmd.extend(["--metadata", f"{key}={value}"])
+
     if verbose:
         print(" ".join(cmd))
+
+    env = _pandoc_env(output_dir, str(paths.style_dir))
+
+    try:
+        run_process(cmd, env=env, capture_output=not verbose)
+    except FileNotFoundError as exc:
+        raise PandocError("pandoc not found") from exc
+    except Exception as exc:
+        stderr = getattr(exc, "stderr", None)
+        stdout = getattr(exc, "stdout", None)
+        raise PandocError(f"pandoc failed: {stderr or stdout}") from exc
+
+
+def _pandoc_env(output_dir: Path, style_dir: str) -> dict[str, str]:
     env = os.environ.copy()
-    env.setdefault("TEXMFCACHE", str(texmf_cache))
-    env.setdefault("TEXMFVAR", str(texmf_var))
-    texinputs = str(paths.style_dir)
+    env.setdefault("TEXMFCACHE", str(output_dir))
+    env.setdefault("TEXMFVAR", str(output_dir))
+
+    texinputs = style_dir
     existing_texinputs = env.get("TEXINPUTS")
     if existing_texinputs:
         if texinputs not in existing_texinputs.split(os.pathsep):
             env["TEXINPUTS"] = texinputs + os.pathsep + existing_texinputs
     else:
         env["TEXINPUTS"] = texinputs + os.pathsep
-    try:
-        subprocess.run(cmd, check=True, capture_output=not verbose, text=True, env=env)
-    except FileNotFoundError as exc:
-        raise PandocError("pandoc not found") from exc
-    except subprocess.CalledProcessError as exc:
-        raise PandocError(f"pandoc failed: {exc.stderr or exc.stdout}") from exc
+    return env

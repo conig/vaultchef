@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import os
 import stat
 import pytest
 
@@ -32,6 +31,7 @@ if out:
     return script
 
 
+# Purpose: verify build dry run.
 def test_build_dry_run(tmp_path: Path, example_vault: Path, temp_home: Path, monkeypatch) -> None:
     cwd = tmp_path / "cwd"
     cwd.mkdir()
@@ -43,6 +43,7 @@ def test_build_dry_run(tmp_path: Path, example_vault: Path, temp_home: Path, mon
     assert not (tmp_path / "build" / "Family Cookbook.pdf").exists()
 
 
+# Purpose: verify build runs pandoc.
 def test_build_runs_pandoc(tmp_path: Path, example_vault: Path, temp_home: Path, monkeypatch) -> None:
     cwd = tmp_path / "cwd"
     cwd.mkdir()
@@ -63,12 +64,14 @@ def test_build_runs_pandoc(tmp_path: Path, example_vault: Path, temp_home: Path,
     assert result.pdf == final_pdf
 
 
+# Purpose: verify build missing cookbook.
 def test_build_missing_cookbook(tmp_path: Path, example_vault: Path, temp_home: Path) -> None:
     cfg = resolve_config({"vault_path": str(example_vault), "project": str(tmp_path)})
     with pytest.raises(MissingFileError):
         build_cookbook("Does Not Exist", cfg, dry_run=True, verbose=False)
 
 
+# Purpose: verify parse cookbook meta variants.
 def test_parse_cookbook_meta_variants() -> None:
     assert _parse_cookbook_meta("No frontmatter") == {}
     assert _parse_cookbook_meta("---\n- a\n---\n") == {}
@@ -78,6 +81,7 @@ def test_parse_cookbook_meta_variants() -> None:
     assert _parse_cookbook_meta(bad_yaml) == {}
 
 
+# Purpose: verify build without title metadata.
 def test_build_without_title_metadata(tmp_path: Path, temp_home: Path, monkeypatch) -> None:
     vault = tmp_path / "Vault"
     recipes = vault / "Recipes"

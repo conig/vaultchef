@@ -11,6 +11,7 @@ from vaultchef.templates import (
 )
 
 
+# Purpose: verify render recipe template.
 def test_render_recipe_template() -> None:
     text = render_recipe_template("1", "Test", course="dessert")
     assert "recipe_id" in text
@@ -18,6 +19,7 @@ def test_render_recipe_template() -> None:
     assert "course: dessert" in text
 
 
+# Purpose: verify render cookbook template.
 def test_render_cookbook_template() -> None:
     text = render_cookbook_template("My Book", subtitle="Sub", author="A", style="menu-card")
     assert "title: My Book" in text
@@ -25,6 +27,7 @@ def test_render_cookbook_template() -> None:
     assert "![[Recipes/Example Recipe]]" in text
 
 
+# Purpose: verify render cookbook note.
 def test_render_cookbook_note() -> None:
     text = render_cookbook_note(
         "My Book",
@@ -40,6 +43,7 @@ def test_render_cookbook_note() -> None:
     assert "![[Recipes/One]]" in text
 
 
+# Purpose: verify write template file.
 def test_write_template_file(tmp_path: Path) -> None:
     path = write_template_file("content", "file.md", str(tmp_path))
     assert Path(path).exists()

@@ -6,6 +6,7 @@ from vaultchef.config import resolve_config
 from vaultchef.paths import resolve_vault_paths, resolve_project_paths
 
 
+# Purpose: verify resolve vault paths.
 def test_resolve_vault_paths(tmp_path: Path, temp_home: Path) -> None:
     vault = tmp_path / "Vault"
     vault.mkdir()
@@ -14,6 +15,7 @@ def test_resolve_vault_paths(tmp_path: Path, temp_home: Path) -> None:
     assert paths.vault_root == vault
 
 
+# Purpose: verify resolve project paths prefers project files.
 def test_resolve_project_paths_prefers_project_files(tmp_path: Path, temp_home: Path) -> None:
     project = tmp_path / "Project"
     project.mkdir()

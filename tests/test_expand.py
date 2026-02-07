@@ -7,6 +7,7 @@ from vaultchef.expand import expand_cookbook, resolve_embed_path, expand_embed, 
 from vaultchef.errors import MissingFileError
 
 
+# Purpose: verify expand cookbook replaces embeds.
 def test_expand_cookbook_replaces_embeds(tmp_path: Path) -> None:
     vault = tmp_path / "Vault"
     recipes = vault / "Recipes"
@@ -25,6 +26,7 @@ def test_expand_cookbook_replaces_embeds(tmp_path: Path) -> None:
     assert "## R1" in baked
 
 
+# Purpose: verify resolve embed path supports md.
 def test_resolve_embed_path_supports_md(tmp_path: Path) -> None:
     vault = tmp_path / "Vault"
     recipes = vault / "Recipes"
@@ -35,12 +37,14 @@ def test_resolve_embed_path_supports_md(tmp_path: Path) -> None:
     assert resolved == recipe_path
 
 
+# Purpose: verify resolve embed path rejects heading refs.
 def test_resolve_embed_path_rejects_heading_refs(tmp_path: Path) -> None:
     vault = tmp_path / "Vault"
     with pytest.raises(MissingFileError):
         resolve_embed_path("Recipes/R1#Heading", str(vault))
 
 
+# Purpose: verify expand embed missing file.
 def test_expand_embed_missing_file(tmp_path: Path) -> None:
     vault = tmp_path / "Vault"
     cookbook = tmp_path / "Book.md"
@@ -49,6 +53,7 @@ def test_expand_embed_missing_file(tmp_path: Path) -> None:
         expand_cookbook(str(cookbook), str(vault))
 
 
+# Purpose: verify expand cookbook read error.
 def test_expand_cookbook_read_error(tmp_path: Path) -> None:
     vault = tmp_path / "Vault"
     vault.mkdir()
@@ -58,6 +63,7 @@ def test_expand_cookbook_read_error(tmp_path: Path) -> None:
         expand_cookbook(str(cookbook), str(vault))
 
 
+# Purpose: verify expand embed read error.
 def test_expand_embed_read_error(tmp_path: Path) -> None:
     vault = tmp_path / "Vault"
     recipes = vault / "Recipes"
@@ -70,6 +76,7 @@ def test_expand_embed_read_error(tmp_path: Path) -> None:
         expand_cookbook(str(cookbook), str(vault))
 
 
+# Purpose: verify expand embed no title.
 def test_expand_embed_no_title(tmp_path: Path) -> None:
     vault = tmp_path / "Vault"
     recipes = vault / "Recipes"
@@ -83,6 +90,7 @@ def test_expand_embed_no_title(tmp_path: Path) -> None:
     assert text.lstrip().startswith("## Ingredients")
 
 
+# Purpose: verify expand embed with image marker.
 def test_expand_embed_with_image_marker(tmp_path: Path) -> None:
     vault = tmp_path / "Vault"
     recipes = vault / "Recipes"
@@ -97,6 +105,7 @@ def test_expand_embed_with_image_marker(tmp_path: Path) -> None:
     assert str((vault / "Images" / "r1.jpg").as_posix()) in text
 
 
+# Purpose: verify split frontmatter edge cases.
 def test_split_frontmatter_edge_cases() -> None:
     meta, body = _split_frontmatter("No frontmatter")
     assert meta == {}
@@ -107,6 +116,7 @@ def test_split_frontmatter_edge_cases() -> None:
     assert meta == {}
 
 
+# Purpose: verify image marker variants.
 def test_image_marker_variants() -> None:
     vault = "/vault"
     assert _image_marker({"image": ""}, vault) is None

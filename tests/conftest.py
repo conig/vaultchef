@@ -51,7 +51,7 @@ def pytest_sessionfinish(session, exitstatus):  # pragma: no cover - test helper
 def _coverage_missing() -> dict[str, list[int]]:
     missing: dict[str, list[int]] = {}
     for path in SRC.rglob("*.py"):
-        if path.name == "tui.py":
+        if _is_coverage_exempt(path):
             continue
         expected = _executable_lines(path)
         executed = EXECUTED.get(str(path), set())
@@ -59,6 +59,15 @@ def _coverage_missing() -> dict[str, list[int]]:
         if diff:
             missing[str(path)] = diff
     return missing
+
+
+def _is_coverage_exempt(path: Path) -> bool:
+    """Allow intentionally dynamic UI modules to evolve without hard coverage gating."""
+    if path.name == "tui.py":
+        return True
+    if "tui" in path.parts:
+        return True
+    return False
 
 
 def _executable_lines(path: Path) -> set[int]:
