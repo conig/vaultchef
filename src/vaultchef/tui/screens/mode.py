@@ -34,7 +34,7 @@ class ModeScreen(Screen):
         super().__init__()
         self._hero_timer = None
         self._frame_idx = 0
-        self._last_hero_width = 70
+        self._last_hero_width = 0
 
     def compose(self) -> ComposeResult:
         yield Header(icon=header_icon(self))
@@ -52,7 +52,7 @@ class ModeScreen(Screen):
     def on_mount(self) -> None:
         sync_screen_layout(self)
         apply_centered_card_width(self, "#mode-card")
-        self._sync_animation_state()
+        self.set_timer(0, self._sync_animation_state)
         self.query_one("#create", Button).focus()
 
     def on_resize(self, event) -> None:
@@ -113,7 +113,8 @@ class ModeScreen(Screen):
     def _start_animation(self) -> None:
         if self._hero_timer is not None:
             return
-        self._render_hero(frame_idx=self._frame_idx)
+        if not self._render_hero(frame_idx=self._frame_idx):
+            return
         self._hero_timer = self.set_interval(0.14, self._tick_hero)
 
     def _stop_animation(self) -> None:
@@ -126,20 +127,25 @@ class ModeScreen(Screen):
         self._frame_idx = (self._frame_idx + 1) % len(POT_FRAMES)
         self._render_hero(frame_idx=self._frame_idx)
 
-    def _render_hero(self, frame_idx: int) -> None:
+    def _render_hero(self, frame_idx: int) -> bool:
         pot_lines = _normalize_art(POT_FRAMES[frame_idx % len(POT_FRAMES)])
 
         art_width = max(len(line) for line in pot_lines)
-        hero_width = int(getattr(self.query_one("#mode-hero", Vertical).size, "width", 0) or 0)
+        hero = self.query_one("#mode-hero", Vertical)
+        hero_width = int(getattr(hero.size, "width", 0) or 0)
         if hero_width > 0:
             self._last_hero_width = hero_width
-        else:
+        elif self._last_hero_width > 0:
             hero_width = self._last_hero_width
+        else:
+            self.query_one("#mode-pot", Static).update("")
+            return False
         left_pad = max(0, (hero_width - art_width) // 2)
         prefix = " " * left_pad
 
         pot_text = "\n".join(f"{prefix}{line}" for line in pot_lines)
         self.query_one("#mode-pot", Static).update(pot_text)
+        return True
 
 
 def _normalize_art(lines) -> list[str]:

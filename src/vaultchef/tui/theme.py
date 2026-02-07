@@ -89,7 +89,7 @@ FooterLabel {
 
 #mode-pot {
     height: auto;
-    color: ansi_bright_cyan;
+    color: ansi_cyan;
     text-style: bold;
 }
 
