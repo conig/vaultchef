@@ -104,4 +104,4 @@ class BuildProgressScreen(Screen):
         self._failed = True
         self.query_one("#build-status", Static).update(message)
         self.query_one("#build-animation", Static).update("Build failed.")
-        self.query_one("#build-bar", Static).update("Press Enter to return.")
+        self.query_one("#build-bar", Static).update("Press Enter, Esc, or q to return.")

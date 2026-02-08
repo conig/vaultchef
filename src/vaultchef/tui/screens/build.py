@@ -39,8 +39,8 @@ class BuildCookbookScreen(Screen):
                 yield Input(placeholder="Type to search", id="search-input")
                 yield ListView(id="cookbook-list")
                 with Horizontal(id="build-actions"):
-                    yield Button("Build", id="build", variant="primary")
-                    yield Button("Back", id="back")
+                    yield Button("[underline]B[/underline]uild", id="build", variant="primary")
+                    yield Button("Back (Esc)", id="back")
                 yield Static("", id="status")
         yield Footer()
 
@@ -85,6 +85,10 @@ class BuildCookbookScreen(Screen):
             self._cycle_focus(-1)
             event.stop()
             return
+        if event.key in ("escape",):
+            self.query_one("#back", Button).press()
+            event.stop()
+            return
         if isinstance(focused, Input):
             if event.key in ("down", "up"):
                 delta = 1 if event.key == "down" else -1
@@ -95,6 +99,10 @@ class BuildCookbookScreen(Screen):
                 self._build_selected()
                 event.stop()
                 return
+            return
+        if event.key in ("b", "B"):
+            self.query_one("#build", Button).press()
+            event.stop()
             return
         if event.key in ("down", "j"):
             self._move_highlight(1)

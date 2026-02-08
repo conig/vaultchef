@@ -22,9 +22,9 @@ class TexDepsScreen(Screen):
                     "Run `vaultchef tex-check` for details or set tex_check = false to disable this warning."
                 )
                 with Horizontal(id="tex-actions"):
-                    yield Button("Install packages", id="install", variant="primary")
-                    yield Button("Continue", id="continue")
-                    yield Button("Quit", id="quit")
+                    yield Button("[underline]I[/underline]nstall packages", id="install", variant="primary")
+                    yield Button("[underline]C[/underline]ontinue (Esc)", id="continue")
+                    yield Button("[underline]Q[/underline]uit", id="quit")
                 yield Static("", id="status")
         yield Footer()
 
@@ -36,6 +36,33 @@ class TexDepsScreen(Screen):
     def on_resize(self, event) -> None:
         sync_screen_layout(self)
         apply_centered_card_width(self, "#tex-card")
+
+    def on_key(self, event) -> None:
+        if event.key in ("i", "I"):
+            self.query_one("#install", Button).press()
+            event.stop()
+            return
+        if event.key in ("c", "C", "escape"):
+            self.query_one("#continue", Button).press()
+            event.stop()
+            return
+        if event.key in ("q", "Q"):
+            self.query_one("#quit", Button).press()
+            event.stop()
+            return
+        if event.key in ("h", "left"):
+            self._cycle_focus(-1)
+            event.stop()
+            return
+        if event.key in ("l", "right"):
+            self._cycle_focus(1)
+            event.stop()
+            return
+        if event.key in ("enter", "space"):
+            focused = self.app.focused
+            if isinstance(focused, Button) and hasattr(focused, "press"):
+                focused.press()
+                event.stop()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "quit":
@@ -56,6 +83,20 @@ class TexDepsScreen(Screen):
                 return
             self._set_status("Installation complete.")
             self.app.pop_screen()
+
+    def _cycle_focus(self, direction: int) -> None:
+        order = [
+            self.query_one("#install", Button),
+            self.query_one("#continue", Button),
+            self.query_one("#quit", Button),
+        ]
+        focused = self.app.focused
+        if focused in order:
+            idx = order.index(focused)
+            next_idx = (idx + direction) % len(order)
+        else:
+            next_idx = 0
+        order[next_idx].focus()
 
     def _set_status(self, message: str) -> None:
         self.query_one("#status", Static).update(message)

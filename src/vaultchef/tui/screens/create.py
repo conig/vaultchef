@@ -57,13 +57,13 @@ class CreateCookbookScreen(Screen):
                         yield ListView(id="selected-list")
 
                 with Horizontal(id="wizard-nav"):
-                    yield Button("Previous", id="step-prev")
+                    yield Button("[underline]P[/underline]revious", id="step-prev")
                     yield Static("", id="step-indicator")
-                    yield Button("Next", id="step-next", variant="primary")
+                    yield Button("[underline]N[/underline]ext", id="step-next", variant="primary")
 
                 with Horizontal(id="create-actions"):
-                    yield Button("Create cookbook", id="create", variant="primary")
-                    yield Button("Back", id="back")
+                    yield Button("[underline]C[/underline]reate cookbook", id="create", variant="primary")
+                    yield Button("Back (Esc)", id="back")
                 yield Static("", id="status")
         yield Footer()
 
@@ -117,6 +117,17 @@ class CreateCookbookScreen(Screen):
         if self._wizard_mode and event.key in ("p", "P"):
             self._prev_step()
             event.stop()
+            return
+        if event.key in ("escape",):
+            self.query_one("#back", Button).press()
+            event.stop()
+            return
+        if event.key in ("c", "C"):
+            if isinstance(focused, Input):
+                return
+            if not self._wizard_mode or self._wizard_step == 2:
+                self.query_one("#create", Button).press()
+                event.stop()
             return
         if isinstance(focused, Input):
             if focused.id == "search-input" and event.key in ("down", "up"):
