@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 import shutil
+from typing import Any
 
 import yaml
 
@@ -13,6 +14,7 @@ from ..errors import MissingFileError
 from ..expand import EMBED_RE, expand_cookbook, resolve_embed_path
 from ..pandoc import run_pandoc
 from ..paths import resolve_project_paths, resolve_vault_paths
+from ..shopping import build_shopping_list
 from ..validate import validate_recipe
 
 
@@ -32,13 +34,18 @@ def build_cookbook(cookbook_name: str, cfg: EffectiveConfig, dry_run: bool, verb
     except OSError as exc:
         raise MissingFileError(f"Cookbook not found: {cookbook_path}") from exc
 
+    recipe_documents: list[tuple[str, str]] = []
     for match in EMBED_RE.finditer(cookbook_text):
         embed = match.group(1)
         recipe_path = resolve_embed_path(embed, str(vault.vault_root))
         recipe_text = recipe_path.read_text(encoding="utf-8")
         validate_recipe(recipe_text, str(recipe_path))
+        recipe_documents.append((str(recipe_path), recipe_text))
 
     cookbook_meta = _parse_cookbook_meta(cookbook_text)
+    if cookbook_meta.get("include_intro_page"):
+        cookbook_meta["shopping_items"] = build_shopping_list(recipe_documents)
+        cookbook_meta.setdefault("shopping_compact", True)
     baked = expand_cookbook(str(cookbook_path), str(vault.vault_root))
 
     project.build_dir.mkdir(parents=True, exist_ok=True)
@@ -65,7 +72,7 @@ def build_cookbook(cookbook_name: str, cfg: EffectiveConfig, dry_run: bool, verb
     return BuildResult(baked_md=baked_path, pdf=final_pdf_path)
 
 
-def _parse_cookbook_meta(text: str) -> dict[str, str]:
+def _parse_cookbook_meta(text: str) -> dict[str, Any]:
     match = FRONTMATTER_RE.match(text)
     if not match:
         return {}
@@ -76,8 +83,8 @@ def _parse_cookbook_meta(text: str) -> dict[str, str]:
     if not isinstance(data, dict):
         return {}
 
-    meta: dict[str, str] = {}
-    for key in ("title", "subtitle", "author"):
+    meta: dict[str, Any] = {}
+    for key in ("title", "subtitle", "author", "album_title", "album_artist", "album_style"):
         value = data.get(key)
         if value is None:
             continue
@@ -86,4 +93,31 @@ def _parse_cookbook_meta(text: str) -> dict[str, str]:
         value_text = str(value).strip()
         if value_text:
             meta[key] = value_text
+
+    include_intro = _coerce_bool(data.get("include_intro_page"))
+    if include_intro is None:
+        include_intro = _coerce_bool(data.get("include_title_page"))
+    if include_intro is not None:
+        meta["include_intro_page"] = include_intro
+
+    compact = _coerce_bool(data.get("shopping_compact"))
+    if compact is not None:
+        meta["shopping_compact"] = compact
+
     return meta
+
+
+def _coerce_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if not isinstance(value, str):
+        return None
+
+    text = value.strip().lower()
+    if text in {"true", "yes", "on", "1"}:
+        return True
+    if text in {"false", "no", "off", "0"}:
+        return False
+    return None

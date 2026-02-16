@@ -124,6 +124,60 @@ if out:
     assert str(extra) in paths
 
 
+# Purpose: verify run pandoc writes structured metadata file.
+def test_run_pandoc_metadata_file(tmp_path: Path, temp_home: Path, monkeypatch) -> None:
+    script = _write_script(
+        tmp_path,
+        """#!/usr/bin/env python3
+import os
+import sys
+
+out = None
+for i, arg in enumerate(sys.argv):
+    if arg == '-o' and i + 1 < len(sys.argv):
+        out = sys.argv[i + 1]
+
+args_out = os.environ.get("PANDOC_ARGS_OUT")
+if args_out:
+    with open(args_out, "w", encoding="utf-8") as fh:
+        fh.write("\\n".join(sys.argv))
+
+meta_out = os.environ.get("PANDOC_META_OUT")
+if meta_out:
+    for i, arg in enumerate(sys.argv):
+        if arg == '--metadata-file' and i + 1 < len(sys.argv):
+            with open(sys.argv[i + 1], "r", encoding="utf-8") as src:
+                data = src.read()
+            with open(meta_out, "w", encoding="utf-8") as dst:
+                dst.write(data)
+
+if out:
+    with open(out, 'wb') as fh:
+        fh.write(b'%PDF-1.4\\n')
+""",
+    )
+    args_out = tmp_path / "args.txt"
+    meta_out = tmp_path / "meta.txt"
+    monkeypatch.setenv("PANDOC_ARGS_OUT", str(args_out))
+    monkeypatch.setenv("PANDOC_META_OUT", str(meta_out))
+    input_md = tmp_path / "in.md"
+    input_md.write_text("# Hi\n", encoding="utf-8")
+    cfg = resolve_config({"vault_path": str(tmp_path), "project": str(tmp_path), "pandoc_path": str(script)})
+    run_pandoc(
+        str(input_md),
+        str(tmp_path / "out.pdf"),
+        cfg,
+        verbose=False,
+        extra_metadata={"include_intro_page": True, "shopping_items": ["2 tbsp olive oil"]},
+    )
+
+    args = args_out.read_text(encoding="utf-8").splitlines()
+    assert "--metadata-file" in args
+    meta_text = meta_out.read_text(encoding="utf-8")
+    assert "include_intro_page: true" in meta_text
+    assert "- 2 tbsp olive oil" in meta_text
+
+
 # Purpose: verify run pandoc missing.
 def test_run_pandoc_missing(tmp_path: Path, temp_home: Path) -> None:
     input_md = tmp_path / "in.md"

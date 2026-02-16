@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+\documentclass[11pt,twoside]{article}
 \usepackage{geometry}
 \usepackage{hyperref}
 \usepackage{xcolor}
@@ -30,9 +30,9 @@
 }{}
 
 % Palette and typography for a fine-dining menu feel.
-\definecolor{VCink}{HTML}{1C1A17}
-\definecolor{VCaccent}{HTML}{9A7B4F}
-\definecolor{VCcream}{HTML}{F8F4EE}
+\definecolor{VCink}{HTML}{000000}
+\definecolor{VCaccent}{HTML}{000000}
+\definecolor{VCcream}{HTML}{FFFFFF}
 \color{VCink}
 
 \IfFileExists{fontspec.sty}{
@@ -98,6 +98,49 @@
   \renewcommand{\headrulewidth}{0pt}
   \renewcommand{\footrulewidth}{0pt}
 }{}
+
+$if(include_intro_page)$
+\thispagestyle{plain}
+\begin{center}
+  {\Large\scshape\color{VCaccent}$title$}
+  $if(subtitle)$
+
+  {\normalsize\color{VCink}$subtitle$}
+  $endif$
+\end{center}
+
+$if(album_title)$
+\section*{Music Pairing}
+\begingroup
+\setlength{\parskip}{0.25em}
+\begin{itemize}
+\item \textbf{Album:} $album_title$
+$if(album_artist)$
+\item \textbf{Artist:} $album_artist$
+$endif$
+$if(album_style)$
+\item \textbf{Style:} $album_style$
+$endif$
+\end{itemize}
+\endgroup
+$endif$
+
+$if(shopping_items)$
+\section*{Shopping List}
+\begingroup
+$if(shopping_compact)$
+\setlength{\parskip}{0.15em}
+$endif$
+\begin{itemize}
+$for(shopping_items)$
+\item $shopping_items$
+$endfor$
+\end{itemize}
+\endgroup
+$endif$
+
+\cleardoublepage
+$endif$
 
 $body$
 

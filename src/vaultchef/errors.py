@@ -14,6 +14,10 @@ class ValidationError(VaultchefError):
     pass
 
 
+class ShoppingParseError(ValidationError):
+    pass
+
+
 class PandocError(VaultchefError):
     pass
 

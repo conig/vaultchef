@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import tempfile
+from typing import Any
+
+import yaml
 
 from .config import EffectiveConfig
 from .errors import PandocError
@@ -14,7 +18,7 @@ def run_pandoc(
     output_pdf: str,
     cfg: EffectiveConfig,
     verbose: bool,
-    extra_metadata: dict[str, str] | None = None,
+    extra_metadata: dict[str, Any] | None = None,
     extra_resource_paths: list[str] | None = None,
 ) -> None:
     paths = resolve_project_paths(cfg)
@@ -43,14 +47,13 @@ def run_pandoc(
         "--resource-path",
         os.pathsep.join(resource_paths),
     ]
-    if extra_metadata:
-        for key, value in extra_metadata.items():
-            cmd.extend(["--metadata", f"{key}={value}"])
+    env = _pandoc_env(output_dir, str(paths.style_dir))
+    metadata_file = _write_metadata_file(output_dir, extra_metadata)
+    if metadata_file is not None:
+        cmd.extend(["--metadata-file", str(metadata_file)])
 
     if verbose:
         print(" ".join(cmd))
-
-    env = _pandoc_env(output_dir, str(paths.style_dir))
 
     try:
         run_process(cmd, env=env, capture_output=not verbose)
@@ -60,6 +63,9 @@ def run_pandoc(
         stderr = getattr(exc, "stderr", None)
         stdout = getattr(exc, "stdout", None)
         raise PandocError(f"pandoc failed: {stderr or stdout}") from exc
+    finally:
+        if metadata_file is not None:
+            metadata_file.unlink(missing_ok=True)
 
 
 def _pandoc_env(output_dir: Path, style_dir: str) -> dict[str, str]:
@@ -75,3 +81,18 @@ def _pandoc_env(output_dir: Path, style_dir: str) -> dict[str, str]:
     else:
         env["TEXINPUTS"] = texinputs + os.pathsep
     return env
+
+
+def _write_metadata_file(output_dir: Path, metadata: dict[str, Any] | None) -> Path | None:
+    if not metadata:
+        return None
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        suffix=".yaml",
+        prefix="vaultchef-meta-",
+        dir=output_dir,
+        delete=False,
+    ) as fh:
+        yaml.safe_dump(metadata, fh, sort_keys=True, allow_unicode=False)
+        return Path(fh.name)

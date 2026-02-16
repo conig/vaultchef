@@ -17,9 +17,9 @@ All build tooling, LaTeX templates, filters, and caches live outside the vault i
 - No GUI dependencies for authoring or building.
 - No proprietary formats.
 - No requirement for Obsidian plugins.
-- No attempt to fully parse nutrition, units, or do ingredient scaling in v1.
+- No attempt to fully parse nutrition or do exact cross-unit ingredient scaling in v1.
 
-Scaling and shopping lists can be added later without changing the authoring format.
+Shopping lists are supported in a conservative mode where only compatible units and stable ingredient names are merged.
 
 ## Concepts
 
@@ -213,6 +213,14 @@ Recommended frontmatter keys:
 - `source` (string)
 - `image` (string path to a hero image; placed between title and ingredients)
 
+Shopping-list parser guidance:
+
+- Keep one purchasable ingredient per bullet line.
+- Put quantity first when known (example: `- 200 g plain flour`).
+- Prefer canonical units to improve merge quality (`tsp`, `tbsp`, `g`, `kg`, `ml`, `l`, `cup`, `oz`, `lb`, `clove`, `can`, `packet`).
+- Keep ingredient naming stable across recipes (`olive oil` vs `extra virgin olive oil` are treated as different items unless intentionally aligned).
+- Put split-usage details in trailing parentheses (example: `- 120 g butter (80 g pastry, 40 g filling)`).
+
 Notes:
 
 - YAML frontmatter metadata is Obsidian-friendly and safe to add.
@@ -228,7 +236,7 @@ Optional sections:
 
 - `## Notes`
 
-Ingredient subsections can be created with headings under Ingredients:
+Ingredient subsections can be created with headings under Ingredients, but a flat single list gives the best shopping-list aggregation:
 
 - `### Filling`
 - `### Sauce`
@@ -287,6 +295,13 @@ A cookbook note is a normal Markdown note in `Cookbooks/` with chapter headings 
 Embeds use Obsidian transclusion syntax:
 
 - `![[Recipes/116 Lemon Tart]]`
+
+Cookbook frontmatter supports intro/shopping metadata:
+
+- `include_intro_page` (bool, opt-in intro page before recipes)
+- `include_title_page` (legacy alias for `include_intro_page` if primary key is absent)
+- `album_title`, `album_artist`, `album_style` (music pairing shown on intro page)
+- `shopping_compact` (bool, optional compact spacing for shopping list)
 
 Example:
 
@@ -420,6 +435,13 @@ Metadata rules in v1:
 - ignore unknown keys (no failure)
 - avoid strict typing enforcement (warn only in verbose mode)
 
+Shopping aggregation in v1:
+
+- aggregate from embedded recipe `## Ingredients` bullet lines
+- merge only when normalized ingredient names and units are compatible
+- fail build on malformed ingredient lines (non-bullet content inside `## Ingredients`, empty bullets, or missing parseable ingredient names)
+- do not silently omit ingredient lines
+
 ### Stage 4: Convert with Pandoc
 
 Pandoc runs on the baked Markdown.
@@ -443,7 +465,7 @@ The visual identity aims for:
 - dense but readable ingredient lists
 - spacious method steps
 - optional notes in a shaded panel
-- no title page; page 1 must be the first recipe to preserve the two-page pattern per recipe
+- no intro page by default; when intro is enabled, recipe pagination still preserves the two-page pattern per recipe
 - recipe title in the page header on every recipe page
 - TUI prompts to install missing TeX packages when detected (can be disabled with tex_check = false)
 
@@ -456,7 +478,10 @@ Recommended macro concepts in `recipe.sty`:
 
 The output cookbook PDF has the following requirements
 
-- No title page unless specified in the cookbook yaml frontmatter (include_title_page :true)
+- No intro page by default. Intro is opt-in via cookbook frontmatter (`include_intro_page: true`).
+- When intro is enabled, render title/meta, music pairing (`album_*`), and an aggregated shopping list before recipes.
+- Shopping list overflow is allowed to spill onto additional pre-recipe pages.
+- If pre-recipe pages end on an odd page, insert an intentional blank page so recipe 1 still starts on a fresh sheet front.
 - Each 2-sided page includes exactly one recipe. On the first page is the recipe title, ingredients, and when provided, a description.
 - The second page includes the methods and notes.
 
