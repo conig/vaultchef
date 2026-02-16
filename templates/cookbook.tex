@@ -76,6 +76,13 @@
   \setlist[itemize]{leftmargin=*,label=\textbullet,itemsep=0.2em,topsep=0.25em,parsep=0pt,partopsep=0pt}
   \setlist[enumerate]{leftmargin=*,label=\arabic*.}
 }{}
+\newif\ifVaultChefHasMulticol
+\IfFileExists{multicol.sty}{
+  \usepackage{multicol}
+  \VaultChefHasMulticoltrue
+}{
+  \VaultChefHasMulticolfalse
+}
 
 % Center content on each page with generous white space.
 \newcommand{\VaultChefPageStart}{%
@@ -86,6 +93,7 @@
   \par%
   \vspace*{\fill}%
 }
+\newcounter{VaultChefIntroStartPage}
 
 \begin{document}
 % Title page intentionally omitted so page 1 starts with the first recipe.
@@ -100,6 +108,7 @@
 }{}
 
 $if(include_intro_page)$
+\setcounter{VaultChefIntroStartPage}{\value{page}}
 \thispagestyle{plain}
 \begin{center}
   {\Large\scshape\color{VCaccent}$title$}
@@ -125,21 +134,37 @@ $endif$
 \endgroup
 $endif$
 
-$if(shopping_items)$
 \section*{Shopping List}
 \begingroup
+\small
+\setlength{\parskip}{0.1em}
 $if(shopping_compact)$
-\setlength{\parskip}{0.15em}
+\setlength{\parskip}{0.05em}
 $endif$
+\ifVaultChefHasMulticol
+\setlength{\columnsep}{1.4em}
+\raggedcolumns
+\begin{multicols}{2}
+\fi
 \begin{itemize}
+$if(shopping_items)$
 $for(shopping_items)$
 \item $shopping_items$
 $endfor$
-\end{itemize}
-\endgroup
+$else$
+\item No shopping items detected.
 $endif$
+\end{itemize}
+\ifVaultChefHasMulticol
+\end{multicols}
+\fi
+\endgroup
 
-\cleardoublepage
+\clearpage
+\ifnum\numexpr\value{page}-\value{VaultChefIntroStartPage}\relax<2
+\thispagestyle{empty}\null
+\clearpage
+\fi
 $endif$
 
 $body$
