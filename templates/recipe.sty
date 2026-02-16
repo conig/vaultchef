@@ -1,8 +1,30 @@
 \ProvidesPackage{recipe}
+\newif\ifVaultChefHasMulticol
+\IfFileExists{multicol.sty}{
+  \RequirePackage{multicol}
+  \VaultChefHasMulticoltrue
+}{
+  \VaultChefHasMulticolfalse
+}
 
 % Placeholder macros for future structured output
 \newcommand{\RecipeCard}[5]{#1 #2 #3 #4 #5}
 \newcommand{\RecipeMeta}[5]{#1 #2 #3 #4 #5}
+\newcommand{\VaultChefIngredientsColumnsStart}{%
+  \begingroup%
+  \setlength{\parskip}{0.15em}%
+  \ifVaultChefHasMulticol%
+    \setlength{\columnsep}{1.4em}%
+    \raggedcolumns%
+    \begin{multicols}{2}%
+  \fi%
+}
+\newcommand{\VaultChefIngredientsColumnsEnd}{%
+  \ifVaultChefHasMulticol%
+    \end{multicols}%
+  \fi%
+  \endgroup%
+}
 \newcommand{\VaultChefSubsection}[1]{%
   \par\vspace{0.6em}%
   {\raggedright\color{VCink}\textbf{#1}\par}%

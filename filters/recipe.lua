@@ -2,6 +2,7 @@ local in_recipe = false
 local page_open = false
 local first_recipe = true
 local current_title = nil
+local ingredients_columns_open = false
 
 local RESERVED_HEADERS = {
   ingredients = true,
@@ -51,12 +52,20 @@ local function image_from_marker(el)
   return { pandoc.RawBlock("latex", latex) }
 end
 
+local function close_ingredients_columns(blocks)
+  if ingredients_columns_open then
+    table.insert(blocks, pandoc.RawBlock("latex", "\\VaultChefIngredientsColumnsEnd\n"))
+    ingredients_columns_open = false
+  end
+end
+
 function RawBlock(el)
   if is_recipe_start(el) then
     in_recipe = true
     current_title = nil
     local blocks = {}
     if page_open then
+      close_ingredients_columns(blocks)
       table.insert(blocks, pandoc.RawBlock("latex", "\\VaultChefPageEnd\n"))
     end
     if first_recipe then
@@ -67,6 +76,7 @@ function RawBlock(el)
     end
     table.insert(blocks, pandoc.RawBlock("latex", "\\markboth{}{}\n"))
     page_open = true
+    ingredients_columns_open = false
     return blocks
   end
   if is_image_marker(el) then
@@ -80,12 +90,22 @@ end
 function Header(el)
   if el.level == 1 then
     in_recipe = false
+    if ingredients_columns_open then
+      ingredients_columns_open = false
+      return { pandoc.RawBlock("latex", "\\VaultChefIngredientsColumnsEnd\n") }
+    end
     return nil
   end
   local text = header_text(el)
   local lower = text:lower()
+  if in_recipe and lower == "ingredients" and el.level == 2 then
+    local blocks = { el, pandoc.RawBlock("latex", "\\VaultChefIngredientsColumnsStart\n") }
+    ingredients_columns_open = true
+    return blocks
+  end
   if in_recipe and lower == "method" then
     local blocks = {}
+    close_ingredients_columns(blocks)
     table.insert(blocks, pandoc.RawBlock("latex", "\\VaultChefPageEnd\n\\clearpage\n\\VaultChefPageStart\n"))
     if current_title then
       local escaped = latex_escape(current_title)
@@ -93,6 +113,11 @@ function Header(el)
     end
     table.insert(blocks, el)
     page_open = true
+    return blocks
+  end
+  if in_recipe and el.level == 2 and ingredients_columns_open then
+    local blocks = { pandoc.RawBlock("latex", "\\VaultChefIngredientsColumnsEnd\n"), el }
+    ingredients_columns_open = false
     return blocks
   end
   if in_recipe and not current_title and el.level == 2 and not RESERVED_HEADERS[lower] then
@@ -107,6 +132,9 @@ function Header(el)
 end
 
 function Pandoc(doc)
+  if ingredients_columns_open then
+    table.insert(doc.blocks, pandoc.RawBlock("latex", "\\VaultChefIngredientsColumnsEnd\n"))
+  end
   if page_open then
     table.insert(doc.blocks, pandoc.RawBlock("latex", "\\VaultChefPageEnd\n"))
   end
