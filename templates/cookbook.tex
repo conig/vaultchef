@@ -118,7 +118,7 @@ $if(include_intro_page)$
   $endif$
 \end{center}
 
-$if(has_music_pairing)$
+$if(album_title)$
 \section*{Music Pairing}
 \begingroup
 \setlength{\parskip}{0.25em}
@@ -131,9 +131,6 @@ $if(album_artist)$
 $endif$
 $if(album_style)$
 \item \textbf{Style:} $album_style$
-$endif$
-$if(album_youtube_url)$
-\item \textbf{Listen:} \url{$album_youtube_url$}
 $endif$
 \end{itemize}
 \endgroup

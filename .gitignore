@@ -29,3 +29,6 @@ htmlcov/
 *.synctex.gz
 *.bbl
 *.blg
+/vaultchef_refactor_desktop.png
+/vaultchef_refactor_mobile_closed.png
+/vaultchef_refactor_mobile_open.png

@@ -136,17 +136,6 @@
       padding: 10px;
     }
 
-    body.nav-open .vc-nav-panel {
-      display: block;
-      position: fixed;
-      top: calc(var(--vc-header-height) + 8px);
-      left: 10px;
-      right: 10px;
-      max-height: calc(100dvh - (var(--vc-header-height) + 20px));
-      overflow: auto;
-      z-index: 90;
-    }
-
     body.nav-open::before {
       content: "";
       position: fixed;
@@ -218,6 +207,34 @@
       margin-right: 0.45em;
       font-size: 0.84em;
       line-height: 1;
+    }
+
+    .vc-nav-icon {
+      display: inline-grid;
+      gap: 4px;
+      width: 20px;
+    }
+
+    .vc-nav-icon-bar {
+      display: block;
+      width: 20px;
+      height: 2px;
+      border-radius: 999px;
+      background: currentColor;
+      transform-origin: center;
+      transition: transform 0.18s ease, opacity 0.14s ease;
+    }
+
+    body.nav-open #vc-nav-toggle .vc-nav-icon-bar:nth-child(1) {
+      transform: translateY(6px) rotate(45deg);
+    }
+
+    body.nav-open #vc-nav-toggle .vc-nav-icon-bar:nth-child(2) {
+      opacity: 0;
+    }
+
+    body.nav-open #vc-nav-toggle .vc-nav-icon-bar:nth-child(3) {
+      transform: translateY(-6px) rotate(-45deg);
     }
 
     #vc-nav-list {
@@ -434,6 +451,27 @@
     }
 
     @media (max-width: 959px) {
+      .vc-nav-panel {
+        display: block;
+        position: fixed;
+        top: calc(var(--vc-header-height) + 8px);
+        right: 10px;
+        width: min(86vw, 320px);
+        max-height: calc(100dvh - (var(--vc-header-height) + 20px));
+        overflow: auto;
+        z-index: 90;
+        transform: translateX(calc(100% + 16px));
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.18s ease, opacity 0.18s ease;
+      }
+
+      body.nav-open .vc-nav-panel {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
       .vc-recipe-shell {
         grid-template-columns: minmax(0, 1fr);
       }
@@ -445,7 +483,7 @@
       }
 
       #vc-nav-toggle {
-        padding-inline: 12px;
+        padding-inline: 11px;
       }
 
       .vc-nav-item-recipe {
@@ -467,7 +505,19 @@ $if(author)$
         <p class="vc-author">By $author$</p>
 $endif$
       </div>
-      <button id="vc-nav-toggle" type="button" aria-expanded="false" aria-controls="vc-nav-list">Contents</button>
+      <button
+        id="vc-nav-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="vc-nav-list"
+        aria-label="Open navigation menu"
+      >
+        <span class="vc-nav-icon" aria-hidden="true">
+          <span class="vc-nav-icon-bar"></span>
+          <span class="vc-nav-icon-bar"></span>
+          <span class="vc-nav-icon-bar"></span>
+        </span>
+      </button>
     </div>
   </header>
 
@@ -532,6 +582,7 @@ $body$
     (() => {
       const navList = document.getElementById("vc-nav-list");
       const navToggle = document.getElementById("vc-nav-toggle");
+      const navPanel = document.getElementById("vc-nav-panel");
       const topbar = document.querySelector(".vc-topbar");
       const headings = Array.from(document.querySelectorAll(".vc-chapter-title, .vc-recipe-title"));
       const links = [];
@@ -642,6 +693,7 @@ $body$
 
       const setExpanded = (expanded) => {
         navToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        navToggle.setAttribute("aria-label", expanded ? "Close navigation menu" : "Open navigation menu");
         document.body.classList.toggle("nav-open", expanded);
       };
 
@@ -672,6 +724,27 @@ $body$
         if (event.key === "Escape") {
           setExpanded(false);
         }
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!window.matchMedia("(max-width: 959px)").matches) {
+          return;
+        }
+        const expanded = navToggle.getAttribute("aria-expanded") === "true";
+        if (!expanded) {
+          return;
+        }
+        const target = event.target;
+        if (!(target instanceof Node)) {
+          return;
+        }
+        if (navToggle.contains(target)) {
+          return;
+        }
+        if (navPanel && navPanel.contains(target)) {
+          return;
+        }
+        setExpanded(false);
       });
 
       window.addEventListener("scroll", setFirstLinkAtTop, { passive: true });

@@ -35,8 +35,18 @@ def test_web_template_includes_music_pairing_hooks() -> None:
     assert "toYouTubeMusicUrl" in text
 
 
-# Purpose: verify pdf template supports music listen URL.
-def test_pdf_template_includes_music_link_field() -> None:
+# Purpose: verify web template includes mobile hamburger drawer hooks.
+def test_web_template_includes_mobile_hamburger_hooks() -> None:
+    text = (ROOT / "templates" / "cookbook.html").read_text(encoding="utf-8")
+    assert ".vc-nav-icon" in text
+    assert ".vc-nav-icon-bar" in text
+    assert "Open navigation menu" in text
+    assert "Close navigation menu" in text
+    assert "translateX(calc(100% + 16px))" in text
+
+
+# Purpose: verify pdf template keeps music metadata only (no URL link).
+def test_pdf_template_excludes_music_link_field() -> None:
     text = (ROOT / "templates" / "cookbook.tex").read_text(encoding="utf-8")
-    assert "$if(album_youtube_url)$" in text
-    assert "\\item \\textbf{Listen:} \\url{$album_youtube_url$}" in text
+    assert "$if(album_youtube_url)$" not in text
+    assert "\\item \\textbf{Listen:}" not in text
