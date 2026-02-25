@@ -100,7 +100,15 @@ def _parse_cookbook_meta(text: str) -> dict[str, Any]:
         return {}
 
     meta: dict[str, Any] = {}
-    for key in ("title", "subtitle", "author", "album_title", "album_artist", "album_style"):
+    for key in (
+        "title",
+        "subtitle",
+        "author",
+        "album_title",
+        "album_artist",
+        "album_style",
+        "album_youtube_url",
+    ):
         value = data.get(key)
         if value is None:
             continue
@@ -119,6 +127,17 @@ def _parse_cookbook_meta(text: str) -> dict[str, Any]:
     compact = _coerce_bool(data.get("shopping_compact"))
     if compact is not None:
         meta["shopping_compact"] = compact
+
+    if any(
+        meta.get(key)
+        for key in (
+            "album_title",
+            "album_artist",
+            "album_style",
+            "album_youtube_url",
+        )
+    ):
+        meta["has_music_pairing"] = True
 
     return meta
 

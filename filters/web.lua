@@ -90,20 +90,39 @@ local function mark_chapter_header(block, used_ids)
 end
 
 local function process_recipe_blocks(blocks, recipe_index, used_ids)
-  local processed = {}
   local saw_recipe_title = false
+  local recipe_title = nil
   local recipe_title_id = nil
+  local current_section = "intro"
+  local intro_blocks = {}
+  local hero_blocks = {}
+  local ingredients_blocks = {}
+  local method_blocks = {}
+  local notes_blocks = {}
+
+  local function section_target()
+    if current_section == "ingredients" then
+      return ingredients_blocks
+    end
+    if current_section == "method" then
+      return method_blocks
+    end
+    if current_section == "notes" then
+      return notes_blocks
+    end
+    return intro_blocks
+  end
 
   for _, block in ipairs(blocks) do
     if is_image_marker(block) then
       local figure = image_from_marker(block)
       if figure ~= nil then
-        table.insert(processed, figure)
+        table.insert(hero_blocks, figure)
       end
     else
       if block.t == "Header" and block.level == 2 then
         local text = pandoc.utils.stringify(block.content)
-        local lower = text:lower()
+        local lower = text:lower():gsub("^%s+", ""):gsub("%s+$", "")
 
         if (not saw_recipe_title) and RESERVED_HEADERS[lower] == nil then
           local attr = add_class(block.attr, "vc-recipe-title")
@@ -111,22 +130,59 @@ local function process_recipe_blocks(blocks, recipe_index, used_ids)
           block = ensure_header_id(block, slugify(text), used_ids)
           saw_recipe_title = true
           recipe_title_id = block.attr.identifier
+          recipe_title = block
+          current_section = "intro"
         elseif RESERVED_HEADERS[lower] ~= nil then
           local attr = add_class(block.attr, RESERVED_HEADERS[lower])
           block.attr = attr
+          current_section = lower
+          table.insert(section_target(), block)
+        else
+          table.insert(section_target(), block)
         end
       elseif block.t == "Header" and block.level == 3 then
         local attr = add_class(block.attr, "vc-subsection-heading")
         block.attr = attr
+        table.insert(section_target(), block)
+      else
+        table.insert(section_target(), block)
       end
-
-      table.insert(processed, block)
     end
+  end
+
+  local left_blocks = {}
+  if recipe_title ~= nil then
+    table.insert(left_blocks, recipe_title)
+  end
+  if #intro_blocks > 0 then
+    table.insert(left_blocks, pandoc.Div(intro_blocks, pandoc.Attr("", { "vc-recipe-intro" })))
+  end
+  for _, figure in ipairs(hero_blocks) do
+    table.insert(left_blocks, figure)
+  end
+  if #ingredients_blocks > 0 then
+    table.insert(left_blocks, pandoc.Div(ingredients_blocks, pandoc.Attr("", { "vc-section", "vc-section-ingredients" })))
+  end
+
+  local right_blocks = {}
+  if #method_blocks > 0 then
+    table.insert(right_blocks, pandoc.Div(method_blocks, pandoc.Attr("", { "vc-section", "vc-section-method" })))
+  end
+  if #notes_blocks > 0 then
+    table.insert(right_blocks, pandoc.Div(notes_blocks, pandoc.Attr("", { "vc-section", "vc-section-notes" })))
+  end
+
+  local shell_blocks = {}
+  if #left_blocks > 0 then
+    table.insert(shell_blocks, pandoc.Div(left_blocks, pandoc.Attr("", { "vc-recipe-col", "vc-col-left" })))
+  end
+  if #right_blocks > 0 then
+    table.insert(shell_blocks, pandoc.Div(right_blocks, pandoc.Attr("", { "vc-recipe-col", "vc-col-right" })))
   end
 
   local card_base = recipe_title_id or ("recipe-" .. recipe_index)
   local card_id = unique_id(card_base .. "-card", used_ids)
-  return pandoc.Div(processed, pandoc.Attr(card_id, { "vc-recipe-card" }))
+  return pandoc.Div({ pandoc.Div(shell_blocks, pandoc.Attr("", { "vc-recipe-shell" })) }, pandoc.Attr(card_id, { "vc-recipe-card" }))
 end
 
 function Pandoc(doc)

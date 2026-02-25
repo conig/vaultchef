@@ -113,7 +113,11 @@ def test_parse_cookbook_meta_variants() -> None:
     )
     assert meta["include_intro_page"] is True
     assert meta["album_title"] == "Test Album"
+    assert meta["has_music_pairing"] is True
     assert meta["shopping_compact"] is False
+    meta = _parse_cookbook_meta("---\nalbum_youtube_url: https://music.youtube.com/watch?v=abc123\n---\n")
+    assert meta["album_youtube_url"] == "https://music.youtube.com/watch?v=abc123"
+    assert meta["has_music_pairing"] is True
     meta = _parse_cookbook_meta("---\ninclude_intro_page: false\ninclude_title_page: true\n---\n")
     assert meta["include_intro_page"] is False
     assert _parse_cookbook_meta("---\ninclude_intro_page: 1\n---\n")["include_intro_page"] is True

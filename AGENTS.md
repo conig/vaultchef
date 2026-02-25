@@ -304,6 +304,7 @@ Cookbook frontmatter supports intro/shopping metadata:
 - `include_intro_page` (bool, opt-in intro page before recipes)
 - `include_title_page` (legacy alias for `include_intro_page` if primary key is absent)
 - `album_title`, `album_artist`, `album_style` (music pairing shown on intro page)
+- `album_youtube_url` (optional YouTube/YouTube Music URL; rendered as a web play button and linked in PDF intro)
 - `shopping_compact` (bool, optional compact spacing for shopping list)
 
 Example:

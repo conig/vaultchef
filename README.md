@@ -164,6 +164,13 @@ Cookbook notes contain headings and embeds like:
 ![[Recipes/116 Lemon Tart]]
 ```
 
+Cookbook frontmatter also supports intro/music metadata:
+
+- `include_intro_page` (bool, opt-in intro page before recipes)
+- `include_title_page` (legacy alias for `include_intro_page`)
+- `album_title`, `album_artist`, `album_style` (music pairing metadata)
+- `album_youtube_url` (optional YouTube/YouTube Music URL for a web play button and PDF listen link)
+
 ## Development
 
 ```bash

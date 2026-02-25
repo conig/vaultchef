@@ -205,13 +205,18 @@ if out:
         str(tmp_path / "out.pdf"),
         cfg,
         verbose=False,
-        extra_metadata={"include_intro_page": True, "shopping_items": ["2 tbsp olive oil"]},
+        extra_metadata={
+            "include_intro_page": True,
+            "shopping_items": ["2 tbsp olive oil"],
+            "album_youtube_url": "https://music.youtube.com/watch?v=abc123",
+        },
     )
 
     args = args_out.read_text(encoding="utf-8").splitlines()
     assert "--metadata-file" in args
     meta_text = meta_out.read_text(encoding="utf-8")
     assert "include_intro_page: true" in meta_text
+    assert "album_youtube_url: https://music.youtube.com/watch?v=abc123" in meta_text
     assert "- 2 tbsp olive oil" in meta_text
 
 
