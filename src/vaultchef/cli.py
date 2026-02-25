@@ -88,6 +88,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     build = sub.add_parser("build", parents=[common])
     build.add_argument("cookbook_name")
+    build.add_argument("--format", dest="output_format", choices=("pdf", "web"), default="pdf")
     build.add_argument("--open", action="store_true")
     build.add_argument("--dry-run", action="store_true")
     build.add_argument("--verbose", action="store_true")
@@ -133,9 +134,15 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def _cmd_build(args: argparse.Namespace) -> int:
     cfg = _resolve_cfg(args)
-    result = build_cookbook(args.cookbook_name, cfg, dry_run=args.dry_run, verbose=args.verbose)
+    result = build_cookbook(
+        args.cookbook_name,
+        cfg,
+        dry_run=args.dry_run,
+        verbose=args.verbose,
+        output_format=args.output_format,
+    )
     if args.open and not args.dry_run:
-        _open_file(str(result.pdf))
+        _open_file(str(result.output))
     return 0
 
 

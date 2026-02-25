@@ -10,7 +10,7 @@ import yaml
 
 from ..config import EffectiveConfig
 from ..domain import FRONTMATTER_RE
-from ..errors import MissingFileError
+from ..errors import ConfigError, MissingFileError
 from ..expand import EMBED_RE, expand_cookbook, resolve_embed_path
 from ..pandoc import run_pandoc
 from ..paths import resolve_project_paths, resolve_vault_paths
@@ -21,10 +21,24 @@ from ..validate import validate_recipe
 @dataclass(frozen=True)
 class BuildResult:
     baked_md: Path
-    pdf: Path
+    output: Path
+    output_format: str
+
+    @property
+    def pdf(self) -> Path:
+        return self.output
 
 
-def build_cookbook(cookbook_name: str, cfg: EffectiveConfig, dry_run: bool, verbose: bool) -> BuildResult:
+def build_cookbook(
+    cookbook_name: str,
+    cfg: EffectiveConfig,
+    dry_run: bool,
+    verbose: bool,
+    output_format: str = "pdf",
+) -> BuildResult:
+    if output_format not in {"pdf", "web"}:
+        raise ConfigError(f"Unsupported output format: {output_format}")
+
     vault = resolve_vault_paths(cfg)
     project = resolve_project_paths(cfg)
 
@@ -52,24 +66,26 @@ def build_cookbook(cookbook_name: str, cfg: EffectiveConfig, dry_run: bool, verb
     baked_path = project.build_dir / f"{cookbook_name}.baked.md"
     baked_path.write_text(baked, encoding="utf-8")
 
-    pdf_path = project.build_dir / f"{cookbook_name}.pdf"
-    final_pdf_path = Path(os.getcwd()) / f"{cookbook_name}.pdf"
+    extension = "pdf" if output_format == "pdf" else "html"
+    output_path = project.build_dir / f"{cookbook_name}.{extension}"
+    final_output_path = Path(os.getcwd()) / f"{cookbook_name}.{extension}"
     if not dry_run:
         extra_metadata = dict(cookbook_meta)
         if not extra_metadata.get("title"):
             extra_metadata["title"] = cookbook_name
         run_pandoc(
             str(baked_path),
-            str(pdf_path),
+            str(output_path),
             cfg,
             verbose,
+            output_format=output_format,
             extra_metadata=extra_metadata or None,
             extra_resource_paths=[str(vault.vault_root)],
         )
-        if pdf_path.resolve() != final_pdf_path.resolve():
-            shutil.copy2(pdf_path, final_pdf_path)
+        if output_path.resolve() != final_output_path.resolve():
+            shutil.copy2(output_path, final_output_path)
 
-    return BuildResult(baked_md=baked_path, pdf=final_pdf_path)
+    return BuildResult(baked_md=baked_path, output=final_output_path, output_format=output_format)
 
 
 def _parse_cookbook_meta(text: str) -> dict[str, Any]:

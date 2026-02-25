@@ -30,6 +30,7 @@ class BuildCookbookScreen(Screen):
         self.search_query: str = ""
         self.selected: CookbookInfo | None = None
         self.highlight_index: int = 0
+        self.web_output_enabled: bool = False
 
     def compose(self) -> ComposeResult:
         yield Header(icon=header_icon(self))
@@ -38,6 +39,7 @@ class BuildCookbookScreen(Screen):
                 yield Label("Find a cookbook")
                 yield Input(placeholder="Type to search", id="search-input")
                 yield ListView(id="cookbook-list")
+                yield Static("", id="format-toggle")
                 with Horizontal(id="build-actions"):
                     yield Button("[underline]B[/underline]uild", id="build", variant="primary")
                     yield Button("Back (Esc)", id="back")
@@ -48,6 +50,7 @@ class BuildCookbookScreen(Screen):
         sync_screen_layout(self)
         apply_centered_card_width(self, "#build-card")
         await self._refresh_cookbooks()
+        self._render_format_toggle()
         self.query_one("#search-input", Input).focus()
 
     def on_resize(self, event) -> None:
@@ -77,6 +80,11 @@ class BuildCookbookScreen(Screen):
 
     def on_key(self, event) -> None:
         focused = self.app.focused
+        if event.key in ("ctrl+w",):
+            self.web_output_enabled = not self.web_output_enabled
+            self._render_format_toggle()
+            event.stop()
+            return
         if event.key in ("tab",):
             self._cycle_focus(1)
             event.stop()
@@ -247,7 +255,13 @@ class BuildCookbookScreen(Screen):
             return
 
         cfg = replace(self.app.cfg, project_dir=os.getcwd())
-        self.app.push_screen(BuildProgressScreen(cookbook, cfg))
+        output_format = "web" if self.web_output_enabled else "pdf"
+        self.app.push_screen(BuildProgressScreen(cookbook, cfg, output_format=output_format))
 
     def _set_status(self, message: str) -> None:
         self.query_one("#status", Static).update(message)
+
+    def _render_format_toggle(self) -> None:
+        mark = "x" if self.web_output_enabled else " "
+        label = f"[{mark}] Web HTML export ([underline]Ctrl+W[/underline])"
+        self.query_one("#format-toggle", Static).update(label)

@@ -1,15 +1,15 @@
 # vaultchef
 
-vaultchef is a terminal-only cookbook builder that turns an Obsidian vault of Markdown recipe notes into a polished PDF that reads somewhere between a restaurant menu and a recipe book.
+vaultchef is a terminal-only cookbook builder that turns an Obsidian vault of Markdown recipe notes into a polished PDF or publish-ready HTML that reads somewhere between a restaurant menu and a recipe book.
 
 The vault stays user-managed and clean.
-All build tooling, LaTeX templates, filters, and caches live outside the vault in a separate project directory. Intermediate build outputs live in the project build dir, while the final PDF is copied to the current working directory.
+All build tooling, templates, filters, and caches live outside the vault in a separate project directory. Intermediate build outputs live in the project build dir, while the final artifact (`.pdf` or `.html`) is copied to the current working directory.
 
 ## Core promise
 
 - Write recipes as plain `.md` notes in an Obsidian vault.
 - Curate a cookbook using a single “Cookbook note” that embeds recipes with `![[...]]`.
-- Run one command in a terminal to generate a beautiful PDF.
+- Run one command in a terminal to generate a beautiful PDF or website-ready HTML.
 - Never write generated artifacts into the vault.
 
 ## Non-goals
@@ -35,7 +35,7 @@ A single vault can be rendered by multiple projects (different styles or audienc
 
 ### Intermediates
 
-All intermediate files should be written into /tmp. Only the resultant PDF should appear in the working directory.
+All intermediate files should be written into /tmp. Only the resultant cookbook artifact (`.pdf` or `.html`) should appear in the working directory.
 
 ### Cookbook note
 
@@ -67,13 +67,16 @@ CookbookProject/
   vaultchef.toml
   templates/
     cookbook.tex
+    cookbook.html
     recipe.sty
   filters/
     recipe.lua
+    web.lua
   build/
     Family Cookbook.baked.md
     Family Cookbook.tex
     Family Cookbook.pdf
+    Family Cookbook.html
   cache/
     ...
 ```
@@ -333,6 +336,12 @@ Build a cookbook:
 vaultchef build "Family Cookbook"
 ```
 
+Build a web version suitable for a personal website:
+
+```bash
+vaultchef build "Family Cookbook" --format web
+```
+
 Launching with no args opens the TUI by default.
 
 Build and open the PDF:
@@ -375,7 +384,7 @@ vaultchef build "Family Cookbook" --vault ~/Obsidian/Vault --project ~/CookbookP
 
 ### Outputs
 
-Intermediate outputs go into the project build directory, and the final PDF is copied to the current working directory.
+Intermediate outputs go into the project build directory, and the final artifact (`.pdf` or `.html`) is copied to the current working directory.
 
 - `<build>/Family Cookbook.baked.md`
   - The cookbook note with embeds expanded into full Markdown.
@@ -385,6 +394,10 @@ Intermediate outputs go into the project build directory, and the final PDF is c
   - Intermediate PDF artifact (before copy).
 - `./Family Cookbook.pdf`
   - Final artifact in the current working directory.
+- `<build>/Family Cookbook.html`
+  - Intermediate standalone HTML artifact (before copy).
+- `./Family Cookbook.html`
+  - Final standalone HTML artifact in the current working directory.
 
 No generated file should be written into the vault.
 
@@ -450,6 +463,7 @@ Recommended approach:
 
 - Use a Lua filter to identify recipe units and emit structured output for LaTeX macros.
 - Use a LaTeX template and a style file that implement the menu-card aesthetic.
+- For web output, use a dedicated HTML template and web Lua filter that emit semantic recipe/chapter wrappers.
 
 ### Stage 5: LaTeX engine to PDF
 
@@ -486,6 +500,14 @@ The output cookbook PDF has the following requirements
 - The second page includes the methods and notes.
 
 This is important as it means that when printed, each recipe is on its own sheet of paper that can be handed to a cook who then does not need to search through the book for all relevant information.
+
+The output cookbook HTML has the following requirements
+
+- Generate a single self-contained `.html` file suitable for manual upload to a personal website.
+- Include a sticky section navigation experience on desktop.
+- Include responsive mobile support, including Pixel 8 Pro-class portrait viewport (`448 x 998`) and desktop layout.
+- Avoid horizontal scrolling on supported mobile viewports.
+- Use tap-friendly controls (minimum `44px` targets) for navigation interactions.
 
 ## Caching and watch mode
 
@@ -604,7 +626,7 @@ Every time they press enter on a recipe it's added into a new cookbook.
 
 When it's finalised vaultchef writes it into the cookbook dir of the vault.
 
-Build mode is simpler, they just fuzzy find a cookbook from all possible cookbooks and then it builds it in the current working directory.
+Build mode is simpler, they fuzzy find a cookbook from all possible cookbooks, optionally toggle web export via a checkbox hotkey, and then build to the current working directory.
 
 This mode is very pretty and snappy, an extremely polished TUI experience.
 

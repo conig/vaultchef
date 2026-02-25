@@ -264,7 +264,7 @@ def test_cli_build_missing(example_vault: Path, tmp_path: Path, temp_home: Path)
 # Purpose: verify cli build open.
 def test_cli_build_open(monkeypatch) -> None:
     class Dummy:
-        pdf = "out.pdf"
+        output = "out.pdf"
 
     monkeypatch.setattr("vaultchef.cli.build_cookbook", lambda *a, **k: Dummy())
     opened = {}
@@ -276,6 +276,45 @@ def test_cli_build_open(monkeypatch) -> None:
     rc = cli.main(["build", "X", "--vault", "/v", "--project", "/p", "--open"])
     assert rc == 0
     assert opened["path"] == "out.pdf"
+
+
+# Purpose: verify cli build web format creates html.
+def test_cli_build_web_creates_html(example_vault: Path, tmp_path: Path, temp_home: Path, monkeypatch) -> None:
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    pandoc = tmp_path / "pandoc"
+    pandoc.write_text(
+        """#!/usr/bin/env python3
+import sys
+out = None
+for i, arg in enumerate(sys.argv):
+    if arg == '-o' and i + 1 < len(sys.argv):
+        out = sys.argv[i + 1]
+if out:
+    with open(out, 'w', encoding='utf-8') as fh:
+        fh.write('<!doctype html>')
+""",
+        encoding="utf-8",
+    )
+    pandoc.chmod(pandoc.stat().st_mode | stat.S_IEXEC)
+    rc = cli.main(
+        [
+            "build",
+            "Family Cookbook",
+            "--vault",
+            str(example_vault),
+            "--project",
+            str(tmp_path),
+            "--pandoc",
+            str(pandoc),
+            "--format",
+            "web",
+        ]
+    )
+    assert rc == 0
+    assert (tmp_path / "build" / "Family Cookbook.html").exists()
+    assert (cwd / "Family Cookbook.html").exists()
 
 
 # Purpose: verify cli list json.

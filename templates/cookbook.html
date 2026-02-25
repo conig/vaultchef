@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html$if(lang)$ lang="$lang$"$else$ lang="en"$endif$>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>$if(title-prefix)$$title-prefix$ - $endif$$if(title)$$title$$else$$pagetitle$$endif$</title>
+  <style>
+    :root {
+      --vc-bg: #f2ecde;
+      --vc-surface: #fffaf0;
+      --vc-surface-strong: #fff5e4;
+      --vc-ink: #1f1a16;
+      --vc-muted: #5e5146;
+      --vc-accent: #b0532f;
+      --vc-accent-soft: #e7c5a3;
+      --vc-border: #ddcbb8;
+      --vc-shadow: 0 18px 42px rgba(50, 34, 24, 0.14);
+      --vc-radius: 18px;
+      --vc-gap: clamp(14px, 2.5vw, 28px);
+      --vc-header-height: 72px;
+      --vc-text: clamp(1rem, 0.94rem + 0.2vw, 1.1rem);
+      --vc-title: clamp(1.55rem, 1.05rem + 1.9vw, 2.6rem);
+      --vc-card-title: clamp(1.22rem, 0.98rem + 0.8vw, 1.7rem);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      max-width: 100%;
+      overflow-x: clip;
+    }
+
+    body {
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", serif;
+      font-size: var(--vc-text);
+      line-height: 1.6;
+      color: var(--vc-ink);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(244, 219, 183, 0.65), transparent 42%),
+        radial-gradient(circle at 92% 6%, rgba(225, 201, 169, 0.58), transparent 35%),
+        linear-gradient(180deg, #f8f2e8 0%, var(--vc-bg) 100%);
+    }
+
+    a {
+      color: var(--vc-accent);
+      text-decoration-thickness: 1.2px;
+      text-underline-offset: 2px;
+    }
+
+    .vc-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 80;
+      border-bottom: 1px solid var(--vc-border);
+      background: rgba(255, 248, 236, 0.95);
+      backdrop-filter: blur(8px);
+    }
+
+    .vc-topbar-inner {
+      margin: 0 auto;
+      max-width: 1280px;
+      padding: 10px var(--vc-gap);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .vc-brand {
+      min-width: 0;
+    }
+
+    .vc-kicker {
+      margin: 0;
+      color: var(--vc-muted);
+      font-size: 0.86rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .vc-brand h1 {
+      margin: 2px 0 0;
+      font-size: var(--vc-title);
+      line-height: 1.15;
+      letter-spacing: 0.015em;
+    }
+
+    .vc-subtitle,
+    .vc-author {
+      margin: 4px 0 0;
+      color: var(--vc-muted);
+      line-height: 1.35;
+      font-size: 0.96rem;
+    }
+
+    #vc-nav-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--vc-border);
+      background: var(--vc-surface-strong);
+      color: var(--vc-ink);
+      padding: 0 14px;
+      font-size: 0.94rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .vc-layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: var(--vc-gap);
+      position: relative;
+    }
+
+    .vc-nav-panel {
+      display: none;
+      background: var(--vc-surface);
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius);
+      box-shadow: var(--vc-shadow);
+      padding: 12px;
+    }
+
+    body.nav-open .vc-nav-panel {
+      display: block;
+      position: fixed;
+      top: calc(var(--vc-header-height) + 8px);
+      left: 10px;
+      right: 10px;
+      max-height: calc(100dvh - (var(--vc-header-height) + 20px));
+      overflow: auto;
+      z-index: 90;
+    }
+
+    body.nav-open::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 16, 12, 0.34);
+      z-index: 85;
+    }
+
+    .vc-nav-title {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--vc-muted);
+    }
+
+    #vc-nav-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 6px;
+    }
+
+    .vc-nav-item-recipe {
+      margin-left: 10px;
+    }
+
+    .vc-nav-link {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      border-radius: 10px;
+      padding: 8px 10px;
+      text-decoration: none;
+      color: var(--vc-ink);
+      border: 1px solid transparent;
+    }
+
+    .vc-nav-link:hover,
+    .vc-nav-link:focus-visible {
+      border-color: var(--vc-accent-soft);
+      background: #f9efdf;
+      outline: none;
+    }
+
+    .vc-nav-link[aria-current="true"] {
+      border-color: var(--vc-accent-soft);
+      background: #f5e5cf;
+      color: #2b1f15;
+      font-weight: 700;
+    }
+
+    .vc-content {
+      min-width: 0;
+    }
+
+    .vc-chapter-title {
+      margin: 0.6em 0 0.35em;
+      font-size: clamp(1.25rem, 1.04rem + 0.85vw, 1.85rem);
+      color: var(--vc-muted);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .vc-recipe-card {
+      margin: 0 0 var(--vc-gap);
+      background: var(--vc-surface);
+      border: 1px solid var(--vc-border);
+      border-radius: var(--vc-radius);
+      box-shadow: var(--vc-shadow);
+      padding: clamp(14px, 2.7vw, 28px);
+    }
+
+    .vc-recipe-title {
+      margin: 0;
+      font-size: var(--vc-card-title);
+      line-height: 1.15;
+      letter-spacing: 0.01em;
+    }
+
+    .vc-ingredients-heading,
+    .vc-method-heading,
+    .vc-notes-heading {
+      margin: 1.2em 0 0.3em;
+      font-size: clamp(1.06rem, 0.98rem + 0.35vw, 1.22rem);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--vc-muted);
+    }
+
+    .vc-subsection-heading {
+      margin: 1em 0 0.2em;
+      font-size: 1.02rem;
+      letter-spacing: 0.025em;
+      color: var(--vc-ink);
+    }
+
+    .vc-hero {
+      margin: 14px auto 16px;
+      max-width: min(100%, 640px);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--vc-border);
+      background: #f8f0e5;
+    }
+
+    .vc-hero img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: clamp(180px, 34dvh, 360px);
+      object-fit: contain;
+      object-position: center;
+    }
+
+    .vc-recipe-card ul,
+    .vc-recipe-card ol {
+      margin-top: 0.2em;
+      padding-inline-start: 1.2em;
+    }
+
+    .vc-recipe-card li {
+      margin-bottom: 0.34em;
+    }
+
+    img,
+    table,
+    pre,
+    code {
+      max-width: 100%;
+    }
+
+    table {
+      display: block;
+      overflow-x: auto;
+      border-collapse: collapse;
+    }
+
+    @media (min-width: 960px) {
+      #vc-nav-toggle {
+        display: none;
+      }
+
+      .vc-layout {
+        display: grid;
+        grid-template-columns: minmax(235px, 290px) minmax(0, 1fr);
+        align-items: start;
+        gap: var(--vc-gap);
+      }
+
+      .vc-nav-panel {
+        display: block;
+        position: sticky;
+        top: calc(var(--vc-header-height) + var(--vc-gap));
+        max-height: calc(100dvh - (var(--vc-header-height) + var(--vc-gap) * 2));
+        overflow: auto;
+      }
+
+      body.nav-open::before {
+        display: none;
+      }
+
+      body.nav-open .vc-nav-panel {
+        position: sticky;
+        top: calc(var(--vc-header-height) + var(--vc-gap));
+        left: auto;
+        right: auto;
+        max-height: calc(100dvh - (var(--vc-header-height) + var(--vc-gap) * 2));
+        z-index: 1;
+      }
+    }
+
+    @media (max-width: 448px) {
+      .vc-topbar-inner {
+        align-items: flex-start;
+      }
+
+      #vc-nav-toggle {
+        padding-inline: 12px;
+      }
+
+      .vc-nav-item-recipe {
+        margin-left: 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="vc-topbar">
+    <div class="vc-topbar-inner">
+      <div class="vc-brand">
+        <p class="vc-kicker">vaultchef web view</p>
+        <h1>$if(title)$$title$$else$$pagetitle$$endif$</h1>
+$if(subtitle)$
+        <p class="vc-subtitle">$subtitle$</p>
+$endif$
+$if(author)$
+        <p class="vc-author">By $author$</p>
+$endif$
+      </div>
+      <button id="vc-nav-toggle" type="button" aria-expanded="false" aria-controls="vc-nav-list">Contents</button>
+    </div>
+  </header>
+
+  <div class="vc-layout">
+    <aside class="vc-nav-panel" id="vc-nav-panel">
+      <h2 class="vc-nav-title">Contents</h2>
+      <nav aria-label="Cookbook sections">
+        <ol id="vc-nav-list"></ol>
+      </nav>
+    </aside>
+
+    <main class="vc-content" id="vc-content">
+$body$
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const navList = document.getElementById("vc-nav-list");
+      const navToggle = document.getElementById("vc-nav-toggle");
+      const topbar = document.querySelector(".vc-topbar");
+      const headings = Array.from(document.querySelectorAll(".vc-chapter-title, .vc-recipe-title"));
+      const links = [];
+
+      if (!navList || !navToggle || headings.length === 0) {
+        if (navToggle) {
+          navToggle.hidden = true;
+        }
+        return;
+      }
+
+      headings.forEach((heading, idx) => {
+        if (!heading.id) {
+          heading.id = "section-" + (idx + 1);
+        }
+
+        const isRecipe = heading.classList.contains("vc-recipe-title");
+        const item = document.createElement("li");
+        item.className = isRecipe ? "vc-nav-item-recipe" : "vc-nav-item-chapter";
+
+        const link = document.createElement("a");
+        link.className = "vc-nav-link";
+        link.href = "#" + heading.id;
+        link.textContent = heading.textContent.trim();
+        link.dataset.target = heading.id;
+
+        item.appendChild(link);
+        navList.appendChild(item);
+        links.push(link);
+      });
+
+      const setExpanded = (expanded) => {
+        navToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        document.body.classList.toggle("nav-open", expanded);
+      };
+
+      const syncHeaderHeight = () => {
+        if (!topbar) {
+          return;
+        }
+        const height = Math.ceil(topbar.getBoundingClientRect().height);
+        if (height > 0) {
+          document.documentElement.style.setProperty("--vc-header-height", height + "px");
+        }
+      };
+
+      navToggle.addEventListener("click", () => {
+        const expanded = navToggle.getAttribute("aria-expanded") === "true";
+        setExpanded(!expanded);
+      });
+
+      links.forEach((link) => {
+        link.addEventListener("click", () => {
+          if (window.matchMedia("(max-width: 959px)").matches) {
+            setExpanded(false);
+          }
+        });
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          setExpanded(false);
+        }
+      });
+
+      if ("IntersectionObserver" in window) {
+        const byId = new Map(links.map((link) => [link.dataset.target, link]));
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              const link = byId.get(entry.target.id);
+              if (!link) {
+                return;
+              }
+              if (entry.isIntersecting) {
+                links.forEach((candidate) => candidate.removeAttribute("aria-current"));
+                link.setAttribute("aria-current", "true");
+              }
+            });
+          },
+          {
+            rootMargin: "-30% 0px -60% 0px",
+            threshold: [0, 1],
+          }
+        );
+
+        headings.forEach((heading) => observer.observe(heading));
+      }
+
+      const syncDesktopState = () => {
+        syncHeaderHeight();
+        if (window.matchMedia("(min-width: 960px)").matches) {
+          setExpanded(false);
+        }
+      };
+
+      window.addEventListener("resize", syncDesktopState);
+      window.addEventListener("load", syncDesktopState);
+      syncDesktopState();
+      requestAnimationFrame(syncHeaderHeight);
+    })();
+  </script>
+</body>
+</html>

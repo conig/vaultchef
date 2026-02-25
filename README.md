@@ -1,12 +1,12 @@
 # vaultchef
 
-vaultchef is a terminal-only cookbook builder that turns an Obsidian vault of Markdown recipe notes into a polished PDF.
+vaultchef is a terminal-only cookbook builder that turns an Obsidian vault of Markdown recipe notes into a polished PDF or publish-ready HTML.
 
 ## Core promise
 
 - Write recipes as plain `.md` notes in an Obsidian vault.
 - Curate a cookbook using a single “Cookbook note” with `![[...]]` embeds.
-- Run one command to generate a PDF.
+- Run one command to generate a PDF or web-ready HTML.
 - Never write generated files into the vault.
 
 ## Quick start (example vault)
@@ -23,7 +23,14 @@ If you have pandoc and LaTeX installed, run a real build:
 vaultchef build "Family Cookbook" --vault fixtures/VaultExample --project .
 ```
 
-Outputs land in `./build/`.
+Build a web version suitable for a personal site:
+
+```bash
+vaultchef build "Family Cookbook" --vault fixtures/VaultExample --project . --format web
+```
+
+Intermediate outputs land in `./build/`, and the final `.pdf` or `.html` is copied to your current working directory.
+The web template is responsive for desktop and phone screens (including Pixel 8 Pro-class widths).
 
 ## CLI
 
@@ -31,7 +38,7 @@ Outputs land in `./build/`.
 vaultchef            # launches TUI by default
 vaultchef --tui
 vaultchef --tui-layout auto|compact|normal|wide --tui-density cozy|compact --tui-mode-animation auto|on|off
-vaultchef build "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME] [--open] [--dry-run]
+vaultchef build "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME] [--format pdf|web] [--open] [--dry-run]
 vaultchef list [--vault PATH] [--tag TAG] [--category CATEGORY] [--json]
 vaultchef watch "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME]
 vaultchef new-recipe --id 116 --title "Lemon Tart"

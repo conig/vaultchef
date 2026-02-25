@@ -13,10 +13,11 @@ from ..textual import ComposeResult, Footer, Header, Screen, Static, Vertical
 
 
 class BuildProgressScreen(Screen):
-    def __init__(self, cookbook: CookbookInfo, cfg: EffectiveConfig) -> None:
+    def __init__(self, cookbook: CookbookInfo, cfg: EffectiveConfig, output_format: str = "pdf") -> None:
         super().__init__()
         self.cookbook = cookbook
         self.cfg = cfg
+        self.output_format = output_format
         self._frame_idx = 0
         self._bar_pos = 0
         self._bar_dir = 1
@@ -30,7 +31,7 @@ class BuildProgressScreen(Screen):
                 yield Static(f"Cooking up {self.cookbook.display()}", id="build-title")
                 yield Static("", id="build-animation")
                 yield Static("", id="build-bar")
-                yield Static("Building...", id="build-status")
+                yield Static(f"Building {self.output_format.upper()}...", id="build-status")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -52,14 +53,20 @@ class BuildProgressScreen(Screen):
 
     def _run_build(self) -> None:
         try:
-            result = build_cookbook(self.cookbook.stem, self.cfg, dry_run=False, verbose=False)
+            result = build_cookbook(
+                self.cookbook.stem,
+                self.cfg,
+                dry_run=False,
+                verbose=False,
+                output_format=self.output_format,
+            )
         except VaultchefError as exc:
             self.app.call_from_thread(self._on_build_error, str(exc))
             return
         except Exception as exc:  # pragma: no cover
             self.app.call_from_thread(self._on_build_error, f"Build failed: {exc}")
             return
-        self.app.call_from_thread(self._on_build_success, result.pdf)
+        self.app.call_from_thread(self._on_build_success, result.output)
 
     def _update_animation(self) -> None:
         frames = [
@@ -94,9 +101,9 @@ class BuildProgressScreen(Screen):
             self._timer.stop()
             self._timer = None
 
-    def _on_build_success(self, pdf_path: Path) -> None:
+    def _on_build_success(self, output_path: Path) -> None:
         self._stop_animation()
-        self.query_one("#build-status", Static).update(f"Built {pdf_path}")
+        self.query_one("#build-status", Static).update(f"Built {output_path}")
         self.set_timer(0.6, self.app.exit)
 
     def _on_build_error(self, message: str) -> None:

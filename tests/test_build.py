@@ -6,7 +6,7 @@ import pytest
 
 from vaultchef.build import build_cookbook, _parse_cookbook_meta
 from vaultchef.config import resolve_config
-from vaultchef.errors import MissingFileError
+from vaultchef.errors import ConfigError, MissingFileError
 
 
 def _write_mock_pandoc(tmp_path: Path) -> Path:
@@ -64,11 +64,40 @@ def test_build_runs_pandoc(tmp_path: Path, example_vault: Path, temp_home: Path,
     assert result.pdf == final_pdf
 
 
+# Purpose: verify build runs pandoc web output.
+def test_build_runs_pandoc_web(tmp_path: Path, example_vault: Path, temp_home: Path, monkeypatch) -> None:
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    pandoc = _write_mock_pandoc(tmp_path)
+    cfg = resolve_config(
+        {
+            "vault_path": str(example_vault),
+            "project": str(tmp_path),
+            "pandoc_path": str(pandoc),
+        }
+    )
+    result = build_cookbook("Family Cookbook", cfg, dry_run=False, verbose=False, output_format="web")
+    build_html = tmp_path / "build" / "Family Cookbook.html"
+    final_html = cwd / "Family Cookbook.html"
+    assert build_html.exists()
+    assert final_html.exists()
+    assert result.output == final_html
+    assert result.output_format == "web"
+
+
 # Purpose: verify build missing cookbook.
 def test_build_missing_cookbook(tmp_path: Path, example_vault: Path, temp_home: Path) -> None:
     cfg = resolve_config({"vault_path": str(example_vault), "project": str(tmp_path)})
     with pytest.raises(MissingFileError):
         build_cookbook("Does Not Exist", cfg, dry_run=True, verbose=False)
+
+
+# Purpose: verify build rejects unsupported format.
+def test_build_rejects_unsupported_format(tmp_path: Path, example_vault: Path, temp_home: Path) -> None:
+    cfg = resolve_config({"vault_path": str(example_vault), "project": str(tmp_path)})
+    with pytest.raises(ConfigError):
+        build_cookbook("Family Cookbook", cfg, dry_run=True, verbose=False, output_format="epub")
 
 
 # Purpose: verify parse cookbook meta variants.
@@ -149,10 +178,12 @@ def test_build_adds_intro_shopping_metadata(tmp_path: Path, temp_home: Path, mon
         output_pdf: str,
         cfg: object,
         verbose: bool,
+        output_format: str = "pdf",
         extra_metadata: dict[str, object] | None = None,
         extra_resource_paths: list[str] | None = None,
     ) -> None:
         captured["metadata"] = extra_metadata or {}
+        captured["output_format"] = output_format
         Path(output_pdf).write_bytes(b"%PDF-1.4\n%mock")
 
     monkeypatch.setattr("vaultchef.services.build_service.run_pandoc", fake_run_pandoc)
@@ -162,3 +193,4 @@ def test_build_adds_intro_shopping_metadata(tmp_path: Path, temp_home: Path, mon
     assert isinstance(meta, dict)
     assert meta["include_intro_page"] is True
     assert meta["shopping_items"] == ["3 tbsp olive oil"]
+    assert captured["output_format"] == "pdf"

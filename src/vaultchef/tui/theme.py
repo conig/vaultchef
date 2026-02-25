@@ -168,6 +168,12 @@ ListView > ListItem.cookbook-selected Label {
     color: $text-muted;
 }
 
+#format-toggle {
+    height: auto;
+    padding: 1 0 0 0;
+    color: $text;
+}
+
 #name-input,
 #search-input {
     margin: 0 0 1 0;
