@@ -92,7 +92,7 @@
     }
 
     .vc-subtitle,
-    .vc-author {
+    .vc-date {
       margin: 2px 0 0;
       color: var(--vc-muted);
       line-height: 1.3;
@@ -496,13 +496,17 @@
   <header class="vc-topbar">
     <div class="vc-topbar-inner">
       <div class="vc-brand">
-        <p class="vc-kicker">vaultchef web view</p>
+        <p class="vc-kicker">VAULTCHEF</p>
         <h1>$if(title)$$title$$else$$pagetitle$$endif$</h1>
-$if(subtitle)$
+$if(web_description)$
+        <p class="vc-subtitle">$web_description$</p>
+$elseif(subtitle)$
         <p class="vc-subtitle">$subtitle$</p>
 $endif$
-$if(author)$
-        <p class="vc-author">By $author$</p>
+$if(web_date)$
+        <p class="vc-date">$web_date$</p>
+$elseif(date)$
+        <p class="vc-date">$date$</p>
 $endif$
       </div>
       <button

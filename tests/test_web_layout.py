@@ -43,6 +43,10 @@ def test_web_template_includes_mobile_hamburger_hooks() -> None:
     assert "Open navigation menu" in text
     assert "Close navigation menu" in text
     assert "translateX(calc(100% + 16px))" in text
+    assert "VAULTCHEF" in text
+    assert "$if(web_date)$" in text
+    assert "$if(web_description)$" in text
+    assert 'class="vc-date"' in text
 
 
 # Purpose: verify pdf template keeps music metadata only (no URL link).

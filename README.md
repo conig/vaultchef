@@ -168,6 +168,7 @@ Cookbook frontmatter also supports intro/music metadata:
 
 - `include_intro_page` (bool, opt-in intro page before recipes)
 - `include_title_page` (legacy alias for `include_intro_page`)
+- `date` (optional date line shown in the web header below description)
 - `album_title`, `album_artist`, `album_style` (music pairing metadata)
 - `album_youtube_url` (optional YouTube/YouTube Music URL for a web play button)
 

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, datetime
 import os
 from pathlib import Path
+import re
 import shutil
 from typing import Any
 
@@ -103,6 +105,7 @@ def _parse_cookbook_meta(text: str) -> dict[str, Any]:
     for key in (
         "title",
         "subtitle",
+        "date",
         "author",
         "album_title",
         "album_artist",
@@ -112,11 +115,33 @@ def _parse_cookbook_meta(text: str) -> dict[str, Any]:
         value = data.get(key)
         if value is None:
             continue
+        if isinstance(value, datetime):
+            value = value.date()
+        if isinstance(value, date):
+            value = value.strftime("%A, %B %d, %Y").replace(" 0", " ")
         if isinstance(value, list):
             value = ", ".join(str(item) for item in value if item is not None)
         value_text = str(value).strip()
         if value_text:
             meta[key] = value_text
+
+    subtitle = meta.get("subtitle")
+    if isinstance(subtitle, str) and "·" in subtitle:
+        left, right = (part.strip() for part in subtitle.split("·", 1))
+        if (
+            left
+            and right
+            and any(char.isdigit() for char in left)
+            and any(char.isalpha() for char in left)
+        ):
+            meta["subtitle"] = right
+            if not meta.get("date") or re.match(r"^\d{4}-\d{2}-\d{2}$", str(meta["date"])):
+                meta["date"] = left
+
+    if isinstance(meta.get("subtitle"), str) and meta["subtitle"]:
+        meta["web_description"] = meta["subtitle"]
+    if isinstance(meta.get("date"), str) and meta["date"]:
+        meta["web_date"] = meta["date"]
 
     include_intro = _coerce_bool(data.get("include_intro_page"))
     if include_intro is None:

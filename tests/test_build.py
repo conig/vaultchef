@@ -106,6 +106,16 @@ def test_parse_cookbook_meta_variants() -> None:
     assert _parse_cookbook_meta("---\n- a\n---\n") == {}
     assert _parse_cookbook_meta("---\nsubtitle: null\n---\n") == {}
     assert _parse_cookbook_meta("---\nauthor: [A, B]\n---\n")["author"] == "A, B"
+    date_meta = _parse_cookbook_meta("---\ndate: 2026-02-24\n---\n")
+    assert date_meta["date"] == "Tuesday, February 24, 2026"
+    assert date_meta["web_date"] == "Tuesday, February 24, 2026"
+    split_meta = _parse_cookbook_meta(
+        "---\nsubtitle: Tuesday, February 24, 2026 · Bright and tropical menu\ndate: 2026-02-24\n---\n"
+    )
+    assert split_meta["subtitle"] == "Bright and tropical menu"
+    assert split_meta["date"] == "Tuesday, February 24, 2026"
+    assert split_meta["web_description"] == "Bright and tropical menu"
+    assert split_meta["web_date"] == "Tuesday, February 24, 2026"
     bad_yaml = "---\n: [\n---\n"
     assert _parse_cookbook_meta(bad_yaml) == {}
     meta = _parse_cookbook_meta(
