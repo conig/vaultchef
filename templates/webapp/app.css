@@ -138,6 +138,58 @@ img {
   gap: 10px;
 }
 
+.vc-feature-slot {
+  display: grid;
+  gap: 10px;
+}
+
+.vc-feature-card {
+  border-radius: 16px;
+  border: 1px solid #d9b692;
+  background: linear-gradient(165deg, #fff6ea 0%, #fde9d5 100%);
+  box-shadow: 0 14px 28px rgba(117, 61, 31, 0.18);
+  padding: 12px;
+  display: grid;
+  gap: 9px;
+  cursor: pointer;
+}
+
+.vc-feature-card:hover,
+.vc-feature-card:focus-visible {
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.vc-feature-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  color: #7a4125;
+  font-weight: 800;
+}
+
+.vc-feature-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.vc-feature-body {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: #6d5a4f;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vc-feature-hero {
+  margin: 0;
+}
+
 .vc-chip {
   border: 1px solid var(--vc-border);
   border-radius: 999px;
@@ -283,17 +335,24 @@ img {
   overflow: hidden;
   border: 1px solid var(--vc-border);
   background: var(--vc-surface-soft);
-  aspect-ratio: 1 / 1;
   width: min(100%, 560px);
+  max-width: 100%;
+  height: auto;
   justify-self: center;
   padding: 12px;
   display: grid;
   place-items: center;
+  position: relative;
+  isolation: isolate;
 }
 
 .vc-hero img {
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
   object-fit: contain;
   object-position: center;
 }
@@ -421,6 +480,230 @@ img {
   z-index: 2200;
 }
 
+/* Recipe mode: compact multi-column cards with modal detail */
+.vc-app.vc-mode-recipes .vc-main {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.vc-app.vc-mode-recipes,
+.vc-app.vc-mode-cookbook-library {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.vc-app.vc-mode-recipes .vc-topbar,
+.vc-app.vc-mode-cookbook-library .vc-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 120;
+}
+
+.vc-app.vc-mode-recipes .vc-list-pane {
+  display: grid;
+  gap: var(--vc-gap);
+  min-height: 0;
+  overflow: auto;
+}
+
+.vc-app.vc-mode-recipes .vc-list {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+.vc-app.vc-mode-recipes .vc-card {
+  padding: 12px;
+  gap: 8px;
+  border-radius: 16px;
+}
+
+.vc-app.vc-mode-recipes .vc-card-hero {
+  aspect-ratio: 1 / 1;
+  padding: 8px;
+}
+
+.vc-app.vc-mode-recipes .vc-card h2 {
+  font-size: 1rem;
+  line-height: 1.28;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vc-app.vc-mode-recipes .vc-card-body {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.8em;
+}
+
+.vc-app.vc-mode-recipes .vc-card .vc-meta-row {
+  gap: 6px;
+}
+
+.vc-app.vc-mode-recipes .vc-card .vc-pill {
+  min-height: 26px;
+  font-size: 0.73rem;
+  padding: 0 9px;
+}
+
+.vc-app.vc-mode-recipes .vc-detail-pane {
+  display: none;
+}
+
+.vc-app.vc-mode-recipe-open .vc-detail-pane {
+  --vc-overlay-pad: clamp(14px, 2.4vw, 32px);
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  background: rgba(27, 19, 13, 0.55);
+  backdrop-filter: blur(2px);
+  padding: 0;
+  overflow: auto;
+}
+
+.vc-app.vc-mode-recipe-open .vc-detail-empty {
+  display: none;
+}
+
+.vc-app.vc-mode-recipe-open .vc-detail {
+  display: grid;
+  align-content: start;
+  min-height: 100dvh;
+  padding: var(--vc-overlay-pad);
+  max-width: min(1240px, calc(100vw - 44px));
+  max-height: none;
+  margin: 0 auto;
+}
+
+.vc-app.vc-mode-recipe-open .vc-detail-surface {
+  border-radius: 24px;
+  box-shadow: 0 28px 64px rgba(23, 12, 7, 0.36);
+  background: #fffdfb;
+  max-height: calc(100dvh - var(--vc-overlay-pad) * 2);
+  overflow: auto;
+  contain: layout paint;
+}
+
+.vc-recipe-modal .vc-detail-grid {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+
+.vc-app.vc-mode-recipe-open .vc-hero {
+  width: min(100%, 430px);
+  height: min(44dvh, 430px);
+  max-height: min(44dvh, 430px);
+  aspect-ratio: auto;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.vc-app.vc-mode-cookbook-library .vc-main {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.vc-app.vc-mode-cookbook-library .vc-list-pane {
+  display: grid;
+  gap: var(--vc-gap);
+  min-height: 0;
+  overflow: auto;
+}
+
+.vc-app.vc-mode-cookbook-library .vc-list {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+
+.vc-app.vc-mode-cookbook-library .vc-card {
+  padding: 12px;
+  gap: 8px;
+  border-radius: 16px;
+}
+
+.vc-app.vc-mode-cookbook-library .vc-card h2 {
+  font-size: 1rem;
+  line-height: 1.28;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.vc-app.vc-mode-cookbook-library .vc-card-body {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.8em;
+}
+
+.vc-app.vc-mode-cookbook-library .vc-detail-pane {
+  display: none;
+}
+
+.vc-card-hero-collage {
+  aspect-ratio: 1 / 1;
+  padding: 8px;
+}
+
+.vc-cookbook-collage {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  gap: 6px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.vc-collage-cell {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--vc-border);
+  background: #fff;
+}
+
+.vc-collage-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.vc-collage-cell-empty {
+  background: linear-gradient(160deg, #f6e4d5 0%, #f1dcc9 100%);
+}
+
+.vc-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.vc-modal-title-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.vc-close-btn {
+  border: 1px solid var(--vc-border);
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--vc-surface-soft);
+  color: var(--vc-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 @media (min-width: 980px) {
   .vc-main {
     grid-template-columns: minmax(340px, 0.84fr) minmax(0, 1.16fr);
@@ -462,6 +745,42 @@ img {
   .vc-tab-cookbooks .vc-main {
     grid-template-columns: minmax(300px, 0.62fr) minmax(0, 1.38fr);
   }
+
+  .vc-app.vc-mode-recipes .vc-list-pane {
+    grid-template-columns: minmax(250px, 290px) minmax(0, 1fr);
+    align-items: start;
+    max-height: calc(100dvh - 170px);
+    padding-right: 0;
+  }
+
+  .vc-app.vc-mode-recipes .vc-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+  }
+
+  .vc-app.vc-mode-recipes .vc-list {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    align-content: start;
+  }
+
+  .vc-app.vc-mode-cookbook-library .vc-list-pane {
+    grid-template-columns: minmax(250px, 290px) minmax(0, 1fr);
+    align-items: start;
+    max-height: calc(100dvh - 170px);
+    padding-right: 0;
+  }
+
+  .vc-app.vc-mode-cookbook-library .vc-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+  }
+
+  .vc-app.vc-mode-cookbook-library .vc-list {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    align-content: start;
+  }
 }
 
 @media (max-width: 447px) {
@@ -477,6 +796,26 @@ img {
 
   .vc-reader-recipe-header {
     align-items: flex-start;
+  }
+
+  .vc-recipe-modal .vc-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .vc-app.vc-mode-recipe-open .vc-detail {
+    max-width: calc(100vw - 18px);
+    min-height: 100dvh;
+    padding: 9px;
+    max-height: none;
+  }
+
+  .vc-app.vc-mode-recipe-open .vc-detail-surface {
+    max-height: calc(100dvh - 18px);
+  }
+
+  .vc-close-btn {
+    min-width: 44px;
+    padding: 0 12px;
   }
 }
 
@@ -791,6 +1130,7 @@ h2.vc-notes-heading {
 .vc-recipe-card .vc-hero {
   margin: 10px 0 12px;
   width: min(100%, 440px);
+  height: min(38dvh, 420px);
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--vc-border);
@@ -798,8 +1138,9 @@ h2.vc-notes-heading {
   padding: clamp(8px, 1.2vw, 12px);
   display: grid;
   place-items: center;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: auto;
   max-height: none;
+  flex: 0 0 auto;
 }
 
 .vc-recipe-card .vc-hero img {

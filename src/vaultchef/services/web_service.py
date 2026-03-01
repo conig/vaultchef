@@ -220,6 +220,7 @@ def _build_cookbook_entries(
                 "subtitle": _string_value(meta.get("subtitle")) or "",
                 "author": _string_value(meta.get("author")) or "",
                 "date": _string_value(meta.get("date")) or "",
+                "source_mtime": int(path.stat().st_mtime),
                 "description": _string_value(meta.get("description")) or "",
                 "album_title": _string_value(meta.get("album_title")) or "",
                 "album_artist": _string_value(meta.get("album_artist")) or "",

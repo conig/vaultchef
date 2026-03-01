@@ -12,6 +12,7 @@ def test_webapp_template_files_exist() -> None:
     assert (base / "index.html").exists()
     assert (base / "app.css").exists()
     assert (base / "app.js").exists()
+    assert 'id="vc-feature-slot"' in (base / "index.html").read_text(encoding="utf-8")
 
 
 # Purpose: verify web app script includes hash routes and morph animation hooks.
@@ -29,6 +30,8 @@ def test_webapp_script_includes_routes_and_morph() -> None:
     assert "data-vc-music-url" in text
     assert "data-cookbook-nav-toggle" in text
     assert "vc-nav-open" in text
+    assert "getFeaturedDateNightCookbook" in text
+    assert "renderSidebarFeature" in text
 
 
 # Purpose: verify web app css preserves mobile tap target sizing.
@@ -41,3 +44,4 @@ def test_webapp_css_tap_targets() -> None:
     assert ".vc-music-link" in text
     assert ".vc-cookbook-nav-toggle" in text
     assert ".vc-nav-icon-bar" in text
+    assert ".vc-feature-card" in text

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-03-01T11:04:42.369745+00:00",
+  "generated_at": "2026-03-01T22:03:43.970499+00:00",
   "recipes": [
     {
       "id": "301",
@@ -1461,8 +1461,9 @@
       "slug": "date-night-feb-07",
       "title": "Date Night Feb 07",
       "subtitle": "Beetroot salad, crispy chicken, tiramisu, and a grapefruit spritz",
-      "author": "Vaultchef Test",
+      "author": "",
       "date": "",
+      "source_mtime": 1772363849,
       "description": "",
       "album_title": "",
       "album_artist": "",
@@ -1498,8 +1499,9 @@
       "slug": "date-night-jan-31",
       "title": "Date Night Jan 31",
       "subtitle": "Quick bites, fresh salad, and a sparkling mocktail",
-      "author": "Vaultchef Test",
+      "author": "",
       "date": "",
+      "source_mtime": 1772363845,
       "description": "",
       "album_title": "",
       "album_artist": "",
@@ -1537,6 +1539,7 @@
       "subtitle": "Saturday, February 14, 2026 · Low-effort Italian-inspired menu with bright lemon, herbs, and creamy finishes",
       "author": "Codex",
       "date": "2026-02-14",
+      "source_mtime": 1771995152,
       "description": "",
       "album_title": "Bossa Antigua",
       "album_artist": "Paul Desmond",
@@ -1573,7 +1576,8 @@
       "title": "Date Night: Lantern Coast Supper",
       "subtitle": "Saturday, March 7, 2026 · Bright, low-effort late-summer East-Asian-inspired menu with crisp citrus, glossy umami, and tropical finish",
       "author": "Codex",
-      "date": "",
+      "date": "2026-03-07",
+      "source_mtime": 1772402370,
       "description": "",
       "album_title": "Midnight Sugar",
       "album_artist": "Tsuyoshi Yamamoto Trio",
@@ -1611,6 +1615,7 @@
       "subtitle": "Tuesday, February 24, 2026 · A fresh night-market-inspired menu with bright acidity, deep umami, and tropical finish",
       "author": "Codex",
       "date": "2026-02-24",
+      "source_mtime": 1771995152,
       "description": "",
       "album_title": "Scenery",
       "album_artist": "Ryo Fukui",
@@ -1648,6 +1653,7 @@
       "subtitle": "Saturday, February 21, 2026 · Low-effort Mediterranean date-night menu with bright herbs, warm spice, and silky textures",
       "author": "Codex",
       "date": "2026-02-21",
+      "source_mtime": 1771995152,
       "description": "",
       "album_title": "Waltz for Debby",
       "album_artist": "Bill Evans Trio",
@@ -1676,30 +1682,6 @@
         {
           "type": "recipe",
           "slug": "recipe-308-warm-honeyed-pears-with-vanilla-ricotta-walnut-crunch"
-        }
-      ]
-    },
-    {
-      "slug": "family-cookbook",
-      "title": "Family Cookbook",
-      "subtitle": "Weeknight staples and weekend favourites",
-      "author": "James & Emma",
-      "date": "",
-      "description": "",
-      "album_title": "",
-      "album_artist": "",
-      "album_style": "",
-      "album_youtube_url": "",
-      "recipe_slugs": [],
-      "reader_intro_html": "",
-      "reader_blocks": [
-        {
-          "type": "chapter",
-          "title": "Desserts"
-        },
-        {
-          "type": "chapter",
-          "title": "Mains"
         }
       ]
     }

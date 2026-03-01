@@ -22,6 +22,7 @@ const refs = {
   tabCookbooks: document.getElementById("vc-tab-cookbooks"),
   searchInput: document.getElementById("vc-search-input"),
   filterRow: document.getElementById("vc-filter-row"),
+  featureSlot: document.getElementById("vc-feature-slot"),
   list: document.getElementById("vc-list"),
   detail: document.getElementById("vc-detail"),
   detailEmpty: document.getElementById("vc-detail-empty"),
@@ -215,12 +216,13 @@ const matchesCookbookFilters = (cookbook) => {
 
 const setTab = (tab) => {
   state.tab = tab;
+  state.q = "";
+  state.flags = new Set();
+  state.tags = new Set();
   if (tab === "recipes") {
     state.cookbookSlug = "";
   } else {
     state.recipeSlug = "";
-    state.flags = new Set();
-    state.tags = new Set();
   }
   updateHash();
 };
@@ -236,6 +238,12 @@ const openCookbook = (slug, sourceCard = null) => {
   if (sourceCard instanceof HTMLElement) pendingMorphRect = sourceCard.getBoundingClientRect();
   state.tab = "cookbooks";
   state.cookbookSlug = slug;
+  updateHash();
+};
+
+const closeRecipe = () => {
+  if (!state.recipeSlug) return;
+  state.recipeSlug = "";
   updateHash();
 };
 
@@ -265,13 +273,53 @@ const buildMetaPills = (values) => {
   return row;
 };
 
-const makeCard = ({ title, body, pills, image, onOpen }) => {
+const buildCookbookCollageHtml = (cookbook) => {
+  const candidates = (cookbook.recipe_slugs || [])
+    .map((slug) => recipesBySlug.get(slug))
+    .filter(Boolean)
+    .map((recipe) => recipe.image)
+    .filter(Boolean)
+    .slice(0, 4);
+  if (candidates.length === 0) return "";
+
+  const cells = Array.from({ length: 4 }, (_value, idx) => {
+    const src = candidates[idx] || "";
+    return src
+      ? `<span class="vc-collage-cell"><img src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" /></span>`
+      : `<span class="vc-collage-cell vc-collage-cell-empty" aria-hidden="true"></span>`;
+  }).join("");
+  return `<div class="vc-cookbook-collage" aria-hidden="true">${cells}</div>`;
+};
+
+const extractDateFromTitle = (title) => {
+  const match = text(title).match(/\(([^)]+)\)\s*$/);
+  return match ? text(match[1]) : "";
+};
+
+const cookbookTimestamp = (cookbook) => {
+  const candidates = [text(cookbook.date), extractDateFromTitle(cookbook.title)].filter(Boolean);
+  for (const candidate of candidates) {
+    const stamp = Date.parse(candidate);
+    if (Number.isFinite(stamp)) return stamp;
+  }
+  const sourceMtime = Number(cookbook.source_mtime || 0);
+  if (Number.isFinite(sourceMtime) && sourceMtime > 0) return sourceMtime * 1000;
+  return Number.NEGATIVE_INFINITY;
+};
+
+const getFeaturedDateNightCookbook = () => {
+  const pool = (data?.cookbooks || []).filter((cookbook) => normalize(cookbook.title).includes("date night"));
+  if (pool.length === 0) return null;
+  return [...pool].sort((a, b) => cookbookTimestamp(b) - cookbookTimestamp(a))[0] || null;
+};
+
+const makeCard = ({ title, body, pills, image, heroHtml, heroClass, onOpen }) => {
   const card = refs.cardTemplate.content.firstElementChild.cloneNode(true);
 
-  if (image) {
+  if (heroHtml || image) {
     const figure = document.createElement("figure");
-    figure.className = "vc-card-hero";
-    figure.innerHTML = `<img src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async" />`;
+    figure.className = `vc-card-hero ${heroClass || ""}`.trim();
+    figure.innerHTML = heroHtml || `<img src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async" />`;
     card.appendChild(figure);
   }
 
@@ -304,8 +352,48 @@ const renderTabs = () => {
   refs.tabRecipes.setAttribute("aria-selected", recipeSelected ? "true" : "false");
   refs.tabCookbooks.setAttribute("aria-selected", recipeSelected ? "false" : "true");
 
+  refs.app.classList.toggle("vc-mode-recipes", recipeSelected);
+  refs.app.classList.toggle("vc-mode-recipe-open", recipeSelected && Boolean(state.recipeSlug));
+  refs.app.classList.toggle("vc-mode-cookbook-library", state.tab === "cookbooks" && !state.cookbookSlug);
   const cookbookFullscreen = state.tab === "cookbooks" && Boolean(state.cookbookSlug);
   refs.app.classList.toggle("vc-mode-cookbook", cookbookFullscreen);
+};
+
+const renderSidebarFeature = () => {
+  if (!refs.featureSlot) return;
+  clearNode(refs.featureSlot);
+  refs.featureSlot.hidden = true;
+  if (!(state.tab === "cookbooks" && !state.cookbookSlug)) return;
+
+  const featured = getFeaturedDateNightCookbook();
+  if (!featured) return;
+
+  const card = document.createElement("article");
+  card.className = "vc-feature-card";
+  card.tabIndex = 0;
+  card.innerHTML = `
+    <p class="vc-feature-kicker">Latest Date Night</p>
+    <h3>${escapeHtml(featured.title)}</h3>
+    ${featured.subtitle ? `<p class="vc-feature-body">${escapeHtml(featured.subtitle)}</p>` : ""}
+    <figure class="vc-card-hero vc-card-hero-collage vc-feature-hero">
+      ${buildCookbookCollageHtml(featured) || '<div class="vc-cookbook-collage"><span class="vc-collage-cell vc-collage-cell-empty"></span><span class="vc-collage-cell vc-collage-cell-empty"></span><span class="vc-collage-cell vc-collage-cell-empty"></span><span class="vc-collage-cell vc-collage-cell-empty"></span></div>'}
+    </figure>
+    <div class="vc-meta-row">
+      ${featured.date ? `<span class="vc-pill">${escapeHtml(featured.date)}</span>` : ""}
+      <span class="vc-pill">${featured.recipe_slugs.length} recipes</span>
+    </div>
+  `;
+
+  card.addEventListener("click", () => openCookbook(featured.slug, card));
+  card.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openCookbook(featured.slug, card);
+    }
+  });
+
+  refs.featureSlot.appendChild(card);
+  refs.featureSlot.hidden = false;
 };
 
 const renderFilters = () => {
@@ -359,8 +447,8 @@ const renderRecipesList = () => {
   activeRecipeList.forEach((recipe) => {
     const pills = [];
     if (recipe.course) pills.push(recipe.course);
-    if (recipe.serves) pills.push(`Serves ${recipe.serves}`);
-    if (recipe.prep || recipe.cook) pills.push([recipe.prep, recipe.cook].filter(Boolean).join(" + "));
+    (recipe.tags || []).slice(0, 3).forEach((tag) => pills.push(`#${tag}`));
+    if (pills.length < 3 && recipe.serves) pills.push(`Serves ${recipe.serves}`);
 
     const card = makeCard({
       title: recipe.title,
@@ -395,7 +483,8 @@ const renderCookbooksList = () => {
       title: cookbook.title,
       body: cookbook.subtitle || cookbook.description,
       pills,
-      image: "",
+      heroHtml: buildCookbookCollageHtml(cookbook),
+      heroClass: "vc-card-hero-collage",
       onOpen: (node) => openCookbook(cookbook.slug, node),
     });
     refs.list.appendChild(card);
@@ -421,15 +510,19 @@ const renderRecipeDetail = () => {
   const recipe = recipesBySlug.get(state.recipeSlug);
   if (!recipe) {
     refs.detail.hidden = true;
-    refs.detailEmpty.hidden = false;
-    refs.detailEmpty.textContent = "Choose a recipe from the list to see details.";
+    refs.detailEmpty.hidden = true;
     return;
   }
 
   refs.detail.innerHTML = `
-    <div class="vc-detail-surface" id="vc-detail-surface">
-      <h2>${escapeHtml(recipe.title)}</h2>
-      ${recipe.menu ? `<p class="vc-lede">${escapeHtml(recipe.menu)}</p>` : ""}
+    <div class="vc-detail-surface vc-recipe-modal" id="vc-detail-surface" role="dialog" aria-modal="true" aria-label="${escapeHtml(recipe.title)}">
+      <header class="vc-modal-head">
+        <div class="vc-modal-title-wrap">
+          <h2>${escapeHtml(recipe.title)}</h2>
+          ${recipe.menu ? `<p class="vc-lede">${escapeHtml(recipe.menu)}</p>` : ""}
+        </div>
+        <button class="vc-close-btn" type="button" data-close-recipe aria-label="Close recipe">Close</button>
+      </header>
       ${renderRecipeHero(recipe)}
       <div class="vc-meta-row">
         ${recipe.serves ? `<span class="vc-pill">Serves ${escapeHtml(recipe.serves)}</span>` : ""}
@@ -455,6 +548,7 @@ const renderRecipeDetail = () => {
   refs.detail.querySelectorAll("[data-cookbook-jump]").forEach((button) => {
     button.addEventListener("click", () => openCookbook(button.dataset.cookbookJump || ""));
   });
+  refs.detail.querySelector("[data-close-recipe]")?.addEventListener("click", closeRecipe);
 
   refs.detail.hidden = false;
   refs.detailEmpty.hidden = true;
@@ -748,6 +842,7 @@ const render = () => {
   refs.searchInput.placeholder = state.tab === "recipes" ? "Search in recipes" : "Search in cookbooks";
 
   renderFilters();
+  renderSidebarFeature();
 
   if (state.tab === "recipes") {
     renderRecipesList();
@@ -756,13 +851,6 @@ const render = () => {
       updateHash(true);
       return;
     }
-
-    if (!state.recipeSlug && activeRecipeList.length > 0 && normalize(state.q) === "" && state.flags.size === 0 && state.tags.size === 0) {
-      state.recipeSlug = activeRecipeList[0].slug;
-      updateHash(true);
-      return;
-    }
-
     renderRecipeDetail();
     return;
   }
@@ -774,8 +862,7 @@ const render = () => {
 
   renderCookbooksList();
   refs.detail.hidden = true;
-  refs.detailEmpty.hidden = false;
-  refs.detailEmpty.textContent = "Choose a cookbook to open full cookbook view.";
+  refs.detailEmpty.hidden = true;
 };
 
 const setupEvents = () => {
@@ -787,6 +874,14 @@ const setupEvents = () => {
     if (state.tab === "recipes") state.recipeSlug = "";
     if (state.tab === "cookbooks") state.cookbookSlug = "";
     updateHash(true);
+  });
+
+  refs.detail.closest(".vc-detail-pane")?.addEventListener("click", (event) => {
+    if (!(state.tab === "recipes" && state.recipeSlug)) return;
+    if (event.target === event.currentTarget) closeRecipe();
+  });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.tab === "recipes" && state.recipeSlug) closeRecipe();
   });
 
   window.addEventListener("resize", () => {

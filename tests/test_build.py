@@ -121,6 +121,7 @@ def test_build_web_copies_images_and_reader_blocks(tmp_path: Path, temp_home: Pa
 
     cookbook = payload["cookbooks"][0]
     assert cookbook["reader_intro_html"] != ""
+    assert isinstance(cookbook["source_mtime"], int)
     assert any(block.get("type") == "chapter" for block in cookbook["reader_blocks"])
     assert any(block.get("type") == "recipe" for block in cookbook["reader_blocks"])
 
