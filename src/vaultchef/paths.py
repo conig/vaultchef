@@ -24,6 +24,7 @@ class ProjectPaths:
     lua_filter_path: Path
     web_template_path: Path
     web_lua_filter_path: Path
+    webapp_template_dir: Path
     style_dir: Path
 
 
@@ -46,6 +47,7 @@ def resolve_project_paths(cfg: EffectiveConfig) -> ProjectPaths:
     lua_filter_path = _resolve_file(root, Path(cfg.pandoc.lua_filter), filters_fallback / "recipe.lua")
     web_template_path = _resolve_file(root, Path("templates/cookbook.html"), templates_fallback / "cookbook.html")
     web_lua_filter_path = _resolve_file(root, Path("filters/web.lua"), filters_fallback / "web.lua")
+    webapp_template_dir = _resolve_dir(root, Path("templates/webapp"), templates_fallback / "webapp")
     style_dir = _resolve_dir(root, Path(cfg.pandoc.style_dir), templates_fallback)
 
     return ProjectPaths(
@@ -58,6 +60,7 @@ def resolve_project_paths(cfg: EffectiveConfig) -> ProjectPaths:
         lua_filter_path=lua_filter_path,
         web_template_path=web_template_path,
         web_lua_filter_path=web_lua_filter_path,
+        webapp_template_dir=webapp_template_dir,
         style_dir=style_dir,
     )
 

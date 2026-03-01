@@ -23,6 +23,7 @@ def test_resolve_project_paths_prefers_project_files(tmp_path: Path, temp_home: 
     filters = project / "filters"
     templates.mkdir()
     filters.mkdir()
+    (templates / "webapp").mkdir()
     (templates / "cookbook.tex").write_text("% ok", encoding="utf-8")
     (templates / "cookbook.html").write_text("<html></html>", encoding="utf-8")
     (filters / "recipe.lua").write_text("return {}", encoding="utf-8")
@@ -42,4 +43,5 @@ def test_resolve_project_paths_prefers_project_files(tmp_path: Path, temp_home: 
     assert paths.lua_filter_path == filters / "recipe.lua"
     assert paths.web_template_path == templates / "cookbook.html"
     assert paths.web_lua_filter_path == filters / "web.lua"
+    assert paths.webapp_template_dir == templates / "webapp"
     assert paths.style_dir == templates

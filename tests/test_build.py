@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import stat
 import pytest
@@ -64,25 +65,23 @@ def test_build_runs_pandoc(tmp_path: Path, example_vault: Path, temp_home: Path,
     assert result.pdf == final_pdf
 
 
-# Purpose: verify build runs pandoc web output.
-def test_build_runs_pandoc_web(tmp_path: Path, example_vault: Path, temp_home: Path, monkeypatch) -> None:
+# Purpose: verify build writes web app bundle output.
+def test_build_writes_web_library_bundle(tmp_path: Path, example_vault: Path, temp_home: Path, monkeypatch) -> None:
     cwd = tmp_path / "cwd"
     cwd.mkdir()
     monkeypatch.chdir(cwd)
-    pandoc = _write_mock_pandoc(tmp_path)
-    cfg = resolve_config(
-        {
-            "vault_path": str(example_vault),
-            "project": str(tmp_path),
-            "pandoc_path": str(pandoc),
-        }
-    )
+    cfg = resolve_config({"vault_path": str(example_vault), "project": str(tmp_path)})
     result = build_cookbook("Family Cookbook", cfg, dry_run=False, verbose=False, output_format="web")
-    build_html = tmp_path / "build" / "Family Cookbook.html"
-    final_html = cwd / "Family Cookbook.html"
-    assert build_html.exists()
-    assert final_html.exists()
-    assert result.output == final_html
+    build_index = tmp_path / "build" / "vaultchef-web" / "content" / "index.json"
+    final_index = cwd / "vaultchef-web" / "content" / "index.json"
+    assert build_index.exists()
+    assert final_index.exists()
+    assert (cwd / "vaultchef-web" / "index.html").exists()
+    payload = json.loads(final_index.read_text(encoding="utf-8"))
+    assert payload["version"] == 1
+    assert len(payload["recipes"]) >= 1
+    assert len(payload["cookbooks"]) >= 1
+    assert result.output == (cwd / "vaultchef-web")
     assert result.output_format == "web"
 
 
@@ -91,6 +90,19 @@ def test_build_missing_cookbook(tmp_path: Path, example_vault: Path, temp_home: 
     cfg = resolve_config({"vault_path": str(example_vault), "project": str(tmp_path)})
     with pytest.raises(MissingFileError):
         build_cookbook("Does Not Exist", cfg, dry_run=True, verbose=False)
+
+
+# Purpose: verify web build does not require cookbook name lookup.
+def test_build_web_ignores_missing_cookbook_name(
+    tmp_path: Path, example_vault: Path, temp_home: Path, monkeypatch
+) -> None:
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    cfg = resolve_config({"vault_path": str(example_vault), "project": str(tmp_path)})
+    result = build_cookbook("Does Not Exist", cfg, dry_run=False, verbose=False, output_format="web")
+    assert result.output == (cwd / "vaultchef-web")
+    assert (cwd / "vaultchef-web" / "content" / "index.json").exists()
 
 
 # Purpose: verify build rejects unsupported format.
@@ -116,6 +128,10 @@ def test_parse_cookbook_meta_variants() -> None:
     assert split_meta["date"] == "Tuesday, February 24, 2026"
     assert split_meta["web_description"] == "Bright and tropical menu"
     assert split_meta["web_date"] == "Tuesday, February 24, 2026"
+    inferred_date_meta = _parse_cookbook_meta(
+        "---\nsubtitle: Tuesday, February 24, 2026 · Bright and tropical menu\n---\n"
+    )
+    assert inferred_date_meta["date"] == "Tuesday, February 24, 2026"
     bad_yaml = "---\n: [\n---\n"
     assert _parse_cookbook_meta(bad_yaml) == {}
     meta = _parse_cookbook_meta(
@@ -135,6 +151,17 @@ def test_parse_cookbook_meta_variants() -> None:
     assert _parse_cookbook_meta("---\ninclude_intro_page: \"yes\"\n---\n")["include_intro_page"] is True
     assert _parse_cookbook_meta("---\ninclude_intro_page: \"off\"\n---\n")["include_intro_page"] is False
     assert _parse_cookbook_meta("---\ninclude_intro_page: \"maybe\"\n---\n") == {}
+    meta = _parse_cookbook_meta(
+        "---\nsubtitle: Tuesday, February 24, 2026 · Bright and tropical menu\ndate: 2026-02-24\n---\n"
+    )
+    assert meta["date"] == "Tuesday, February 24, 2026"
+    parsed = _parse_cookbook_meta(
+        "---\n"
+        + "date: !!timestamp '2026-02-24 09:30:00'\n"
+        + "subtitle: Tuesday, February 24, 2026 · Bright and tropical menu\n"
+        + "---\n"
+    )
+    assert parsed["date"] == "Tuesday, February 24, 2026"
 
 
 # Purpose: verify build without title metadata.

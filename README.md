@@ -1,6 +1,6 @@
 # vaultchef
 
-vaultchef is a terminal-only cookbook builder that turns an Obsidian vault of Markdown recipe notes into a polished PDF or publish-ready HTML.
+vaultchef is a terminal-only cookbook builder that turns an Obsidian vault of Markdown recipe notes into a polished PDF or a publish-ready web app bundle.
 
 ## Core promise
 
@@ -23,14 +23,16 @@ If you have pandoc and LaTeX installed, run a real build:
 vaultchef build "Family Cookbook" --vault fixtures/VaultExample --project .
 ```
 
-Build a web version suitable for a personal site:
+Build the web app bundle suitable for a personal site:
 
 ```bash
-vaultchef build "Family Cookbook" --vault fixtures/VaultExample --project . --format web
+vaultchef build --vault fixtures/VaultExample --project . --format app
 ```
 
-Intermediate outputs land in `./build/`, and the final `.pdf` or `.html` is copied to your current working directory.
-The web template is responsive for desktop and phone screens (including Pixel 8 Pro-class widths).
+Intermediate outputs land in `./build/`.
+- PDF output is copied to your current working directory as `<Cookbook>.pdf`.
+- Web output is copied to your current working directory as `./vaultchef-web/` with `index.html` and `content/index.json`.
+The web app is responsive for desktop and phone screens (including Pixel 8 Pro-class widths).
 
 ## CLI
 
@@ -38,7 +40,8 @@ The web template is responsive for desktop and phone screens (including Pixel 8 
 vaultchef            # launches TUI by default
 vaultchef --tui
 vaultchef --tui-layout auto|compact|normal|wide --tui-density cozy|compact --tui-mode-animation auto|on|off
-vaultchef build "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME] [--format pdf|web] [--open] [--dry-run]
+vaultchef build [COOKBOOK_NAME] [--vault PATH] [--project PATH] [--profile NAME] [--format pdf|web|app] [--app] [--open] [--dry-run]
+vaultchef serve [--host 127.0.0.1] [--port 8000] [--log-file /tmp/vaultchef-serve.log] [--verbose] [--no-build] [--dir PATH]
 vaultchef list [--vault PATH] [--tag TAG] [--category CATEGORY] [--json]
 vaultchef watch "Family Cookbook" [--vault PATH] [--project PATH] [--profile NAME]
 vaultchef new-recipe --id 116 --title "Lemon Tart"
@@ -47,6 +50,21 @@ vaultchef init [PATH] [--force]
 vaultchef config [--vault PATH] [--project PATH] [--profile NAME]
 vaultchef tex-check [--pdf-engine ENGINE]
 ```
+
+Serve the app in one step (builds app first, then serves):
+
+```bash
+vaultchef serve
+```
+
+Serve without rebuild from an existing folder:
+
+```bash
+vaultchef serve --no-build --dir ./vaultchef-web
+```
+
+By default request logs are written to `/tmp/vaultchef-serve-<pid>.log`.
+Use `--verbose` to also print request logs to the terminal.
 
 ## Config
 

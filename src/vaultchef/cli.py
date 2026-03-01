@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 from collections.abc import Callable
@@ -36,6 +38,7 @@ def main(argv: list[str] | None = None) -> int:
 
     handlers: dict[str, Callable[[argparse.Namespace], int]] = {
         "build": _cmd_build,
+        "serve": _cmd_serve,
         "list": _cmd_list,
         "watch": _cmd_watch,
         "new-recipe": _cmd_new_recipe,
@@ -87,11 +90,20 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command")
 
     build = sub.add_parser("build", parents=[common])
-    build.add_argument("cookbook_name")
-    build.add_argument("--format", dest="output_format", choices=("pdf", "web"), default="pdf")
+    build.add_argument("cookbook_name", nargs="?")
+    build.add_argument("--format", dest="output_format", nargs="?", choices=("pdf", "web", "app"), const="app", default="pdf")
+    build.add_argument("--app", action="store_true", help="Build the full vault web app bundle")
     build.add_argument("--open", action="store_true")
     build.add_argument("--dry-run", action="store_true")
     build.add_argument("--verbose", action="store_true")
+
+    serve = sub.add_parser("serve", parents=[common])
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--dir", dest="serve_dir")
+    serve.add_argument("--no-build", action="store_true", help="Serve an existing app directory without rebuilding")
+    serve.add_argument("--log-file", dest="log_file")
+    serve.add_argument("--verbose", action="store_true")
 
     listing = sub.add_parser("list", parents=[common])
     listing.add_argument("--tag")
@@ -134,15 +146,26 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def _cmd_build(args: argparse.Namespace) -> int:
     cfg = _resolve_cfg(args)
+    app_mode = bool(getattr(args, "app", False)) or args.output_format == "app"
+    output_format = "web" if app_mode else args.output_format
+
+    if output_format == "pdf" and not args.cookbook_name:
+        raise ConfigError("cookbook_name is required for PDF builds")
+    if output_format == "web" and args.cookbook_name:
+        print("Note: cookbook_name is ignored for app builds.")
+
     result = build_cookbook(
-        args.cookbook_name,
+        args.cookbook_name or "",
         cfg,
         dry_run=args.dry_run,
         verbose=args.verbose,
-        output_format=args.output_format,
+        output_format=output_format,
     )
     if args.open and not args.dry_run:
-        _open_file(str(result.output))
+        if output_format == "web":
+            _open_file(str(result.output / "index.html"))
+        else:
+            _open_file(str(result.output))
     return 0
 
 
@@ -154,6 +177,48 @@ def _cmd_list(args: argparse.Namespace) -> int:
     else:
         for rec in recipes:
             print(f"{rec.get('recipe_id')}: {rec.get('title')}")
+    return 0
+
+
+def _cmd_serve(args: argparse.Namespace) -> int:
+    cfg = _resolve_cfg(args)
+
+    app_dir: Path
+    if args.no_build:
+        app_dir = Path(args.serve_dir) if args.serve_dir else (Path.cwd() / "vaultchef-web")
+    else:
+        result = build_cookbook("", cfg, dry_run=False, verbose=args.verbose, output_format="web")
+        app_dir = Path(args.serve_dir) if args.serve_dir else result.output
+
+    app_dir = app_dir.resolve()
+    if not app_dir.exists():
+        raise MissingFileError(f"App directory not found: {app_dir}")
+    if not (app_dir / "index.html").exists():
+        raise MissingFileError(f"App entrypoint missing: {app_dir / 'index.html'}")
+
+    log_file = Path(args.log_file) if args.log_file else Path("/tmp") / f"vaultchef-serve-{os.getpid()}.log"
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with log_file.open("a", encoding="utf-8") as log_fh:
+        class AppHandler(SimpleHTTPRequestHandler):
+            def __init__(self, *handler_args, **handler_kwargs):
+                super().__init__(*handler_args, directory=str(app_dir), **handler_kwargs)
+
+            def log_message(self, fmt: str, *message_args) -> None:
+                line = "%s - - [%s] %s\n" % (
+                    self.address_string(),
+                    self.log_date_time_string(),
+                    fmt % message_args,
+                )
+                _write_serve_log(log_fh, line, verbose=args.verbose)
+
+        with ThreadingHTTPServer((args.host, args.port), AppHandler) as server:
+            print(f"Serving {app_dir} at http://{args.host}:{args.port}")
+            print(f"Request log: {log_file}")
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass
     return 0
 
 
@@ -278,6 +343,13 @@ def _open_file(path: str) -> None:
         subprocess.run(["xdg-open", path], check=False)
     except Exception as exc:
         raise ConfigError("Failed to open PDF") from exc
+
+
+def _write_serve_log(log_fh, line: str, verbose: bool) -> None:
+    log_fh.write(line)
+    log_fh.flush()
+    if verbose:
+        print(line, end="")
 
 
 def _exit_code(exc: VaultchefError) -> int:

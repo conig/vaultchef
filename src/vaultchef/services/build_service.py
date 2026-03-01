@@ -18,6 +18,7 @@ from ..pandoc import run_pandoc
 from ..paths import resolve_project_paths, resolve_vault_paths
 from ..shopping import build_shopping_list
 from ..validate import validate_recipe
+from .web_service import build_web_library
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,15 @@ def build_cookbook(
 ) -> BuildResult:
     if output_format not in {"pdf", "web"}:
         raise ConfigError(f"Unsupported output format: {output_format}")
+
+    if output_format == "web":
+        baked_index, output_dir = build_web_library(
+            cookbook_name=cookbook_name,
+            cfg=cfg,
+            dry_run=dry_run,
+            verbose=verbose,
+        )
+        return BuildResult(baked_md=baked_index, output=output_dir, output_format=output_format)
 
     vault = resolve_vault_paths(cfg)
     project = resolve_project_paths(cfg)
@@ -68,9 +78,8 @@ def build_cookbook(
     baked_path = project.build_dir / f"{cookbook_name}.baked.md"
     baked_path.write_text(baked, encoding="utf-8")
 
-    extension = "pdf" if output_format == "pdf" else "html"
-    output_path = project.build_dir / f"{cookbook_name}.{extension}"
-    final_output_path = Path(os.getcwd()) / f"{cookbook_name}.{extension}"
+    output_path = project.build_dir / f"{cookbook_name}.pdf"
+    final_output_path = Path(os.getcwd()) / f"{cookbook_name}.pdf"
     if not dry_run:
         extra_metadata = dict(cookbook_meta)
         if not extra_metadata.get("title"):

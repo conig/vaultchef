@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 from pathlib import Path
 import argparse
 import types
@@ -278,26 +279,28 @@ def test_cli_build_open(monkeypatch) -> None:
     assert opened["path"] == "out.pdf"
 
 
-# Purpose: verify cli build web format creates html.
-def test_cli_build_web_creates_html(example_vault: Path, tmp_path: Path, temp_home: Path, monkeypatch) -> None:
+# Purpose: verify cli build open web targets index html.
+def test_cli_build_open_web(monkeypatch) -> None:
+    class Dummy:
+        output = Path("/tmp/vaultchef-web")
+
+    monkeypatch.setattr("vaultchef.cli.build_cookbook", lambda *a, **k: Dummy())
+    opened = {}
+
+    def fake_open(path: str) -> None:
+        opened["path"] = path
+
+    monkeypatch.setattr("vaultchef.cli._open_file", fake_open)
+    rc = cli.main(["build", "X", "--vault", "/v", "--project", "/p", "--open", "--format", "web"])
+    assert rc == 0
+    assert opened["path"] == "/tmp/vaultchef-web/index.html"
+
+
+# Purpose: verify cli build web format creates library app bundle.
+def test_cli_build_web_creates_bundle(example_vault: Path, tmp_path: Path, temp_home: Path, monkeypatch) -> None:
     cwd = tmp_path / "cwd"
     cwd.mkdir()
     monkeypatch.chdir(cwd)
-    pandoc = tmp_path / "pandoc"
-    pandoc.write_text(
-        """#!/usr/bin/env python3
-import sys
-out = None
-for i, arg in enumerate(sys.argv):
-    if arg == '-o' and i + 1 < len(sys.argv):
-        out = sys.argv[i + 1]
-if out:
-    with open(out, 'w', encoding='utf-8') as fh:
-        fh.write('<!doctype html>')
-""",
-        encoding="utf-8",
-    )
-    pandoc.chmod(pandoc.stat().st_mode | stat.S_IEXEC)
     rc = cli.main(
         [
             "build",
@@ -306,15 +309,62 @@ if out:
             str(example_vault),
             "--project",
             str(tmp_path),
-            "--pandoc",
-            str(pandoc),
             "--format",
             "web",
         ]
     )
     assert rc == 0
-    assert (tmp_path / "build" / "Family Cookbook.html").exists()
-    assert (cwd / "Family Cookbook.html").exists()
+    assert (tmp_path / "build" / "vaultchef-web" / "index.html").exists()
+    assert (cwd / "vaultchef-web" / "index.html").exists()
+    assert (cwd / "vaultchef-web" / "content" / "index.json").exists()
+
+
+# Purpose: verify cli build app format creates library app bundle without cookbook name.
+def test_cli_build_app_creates_bundle(example_vault: Path, tmp_path: Path, temp_home: Path, monkeypatch) -> None:
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    rc = cli.main(
+        [
+            "build",
+            "--vault",
+            str(example_vault),
+            "--project",
+            str(tmp_path),
+            "--format",
+            "app",
+        ]
+    )
+    assert rc == 0
+    assert (tmp_path / "build" / "vaultchef-web" / "index.html").exists()
+    assert (cwd / "vaultchef-web" / "index.html").exists()
+    assert (cwd / "vaultchef-web" / "content" / "index.json").exists()
+
+
+# Purpose: verify cli build supports --format --app shorthand.
+def test_cli_build_format_flag_then_app(example_vault: Path, tmp_path: Path, temp_home: Path, monkeypatch) -> None:
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    rc = cli.main(
+        [
+            "build",
+            "--vault",
+            str(example_vault),
+            "--project",
+            str(tmp_path),
+            "--format",
+            "--app",
+        ]
+    )
+    assert rc == 0
+    assert (cwd / "vaultchef-web" / "index.html").exists()
+
+
+# Purpose: verify cli build requires cookbook name for pdf format.
+def test_cli_build_pdf_requires_cookbook_name(example_vault: Path, tmp_path: Path, temp_home: Path) -> None:
+    rc = cli.main(["build", "--vault", str(example_vault), "--project", str(tmp_path)])
+    assert rc == 2
 
 
 # Purpose: verify cli list json.
@@ -338,6 +388,159 @@ def test_cli_watch(monkeypatch) -> None:
     monkeypatch.setattr("vaultchef.cli.watch_cookbook", lambda *a, **k: None)
     rc = cli.main(["watch", "X", "--vault", "/v", "--project", "/p"])
     assert rc == 0
+
+
+# Purpose: verify cli serve command routing.
+def test_cli_serve(monkeypatch) -> None:
+    monkeypatch.setattr("vaultchef.cli._cmd_serve", lambda *a, **k: 0)
+    rc = cli.main(["serve", "--vault", "/v", "--project", "/p"])
+    assert rc == 0
+
+
+# Purpose: verify cmd serve builds app and writes request log path.
+def test_cmd_serve_builds_and_logs(tmp_path: Path, monkeypatch, capsys) -> None:
+    app_dir = tmp_path / "vaultchef-web"
+    app_dir.mkdir()
+    (app_dir / "index.html").write_text("<!doctype html>", encoding="utf-8")
+    log_file = tmp_path / "serve.log"
+
+    cfg = EffectiveConfig(
+        vault_path="/v",
+        recipes_dir="Recipes",
+        cookbooks_dir="Cookbooks",
+        default_project=None,
+        build_dir="build",
+        cache_dir="cache",
+        pandoc=PandocConfig(),
+        style=StyleConfig(),
+        tex=TexConfig(check_on_startup=False),
+        tui=TuiConfig(header_icon="🍳"),
+        project_dir="/p",
+    )
+    monkeypatch.setattr(cli, "_resolve_cfg", lambda _args: cfg)
+
+    class Dummy:
+        output = app_dir
+
+    monkeypatch.setattr(cli, "build_cookbook", lambda *a, **k: Dummy())
+    captured = {}
+
+    class FakeBaseHandler:
+        def __init__(self, *args, directory=None, **kwargs):
+            captured["directory"] = directory
+
+        def address_string(self):
+            return "127.0.0.1"
+
+        def log_date_time_string(self):
+            return "DATE"
+
+    monkeypatch.setattr(cli, "SimpleHTTPRequestHandler", FakeBaseHandler)
+
+    called = {}
+
+    class FakeServer:
+        def __init__(self, addr, handler):
+            called["addr"] = addr
+            called["handler"] = handler
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def serve_forever(self):
+            handler = called["handler"]()
+            handler.log_message("%s", "GET / HTTP/1.1")
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(cli, "ThreadingHTTPServer", FakeServer)
+
+    args = argparse.Namespace(
+        no_build=False,
+        serve_dir=None,
+        log_file=str(log_file),
+        verbose=False,
+        host="127.0.0.1",
+        port=8000,
+    )
+    rc = cli._cmd_serve(args)
+    assert rc == 0
+    assert called["addr"] == ("127.0.0.1", 8000)
+    assert captured["directory"] == str(app_dir.resolve())
+    assert log_file.exists()
+    assert "GET / HTTP/1.1" in log_file.read_text(encoding="utf-8")
+    output = capsys.readouterr().out
+    assert "Serving" in output
+    assert "Request log:" in output
+
+
+# Purpose: verify cmd serve no-build missing directory error.
+def test_cmd_serve_no_build_missing_dir(tmp_path: Path, monkeypatch) -> None:
+    cfg = EffectiveConfig(
+        vault_path="/v",
+        recipes_dir="Recipes",
+        cookbooks_dir="Cookbooks",
+        default_project=None,
+        build_dir="build",
+        cache_dir="cache",
+        pandoc=PandocConfig(),
+        style=StyleConfig(),
+        tex=TexConfig(check_on_startup=False),
+        tui=TuiConfig(header_icon="🍳"),
+        project_dir="/p",
+    )
+    monkeypatch.setattr(cli, "_resolve_cfg", lambda _args: cfg)
+
+    args = argparse.Namespace(
+        no_build=True,
+        serve_dir=str(tmp_path / "nope"),
+        log_file=str(tmp_path / "serve.log"),
+        verbose=False,
+        host="127.0.0.1",
+        port=8000,
+    )
+    with pytest.raises(MissingFileError):
+        cli._cmd_serve(args)
+
+
+# Purpose: verify cmd serve errors when index.html is missing.
+def test_cmd_serve_missing_entrypoint(tmp_path: Path, monkeypatch) -> None:
+    app_dir = tmp_path / "vaultchef-web"
+    app_dir.mkdir()
+    cfg = EffectiveConfig(
+        vault_path="/v",
+        recipes_dir="Recipes",
+        cookbooks_dir="Cookbooks",
+        default_project=None,
+        build_dir="build",
+        cache_dir="cache",
+        pandoc=PandocConfig(),
+        style=StyleConfig(),
+        tex=TexConfig(check_on_startup=False),
+        tui=TuiConfig(header_icon="🍳"),
+        project_dir="/p",
+    )
+    monkeypatch.setattr(cli, "_resolve_cfg", lambda _args: cfg)
+    args = argparse.Namespace(
+        no_build=True,
+        serve_dir=str(app_dir),
+        log_file=str(tmp_path / "serve.log"),
+        verbose=False,
+        host="127.0.0.1",
+        port=8000,
+    )
+    with pytest.raises(MissingFileError):
+        cli._cmd_serve(args)
+
+
+# Purpose: verify write serve log helper supports verbose stream output.
+def test_write_serve_log_verbose(capsys) -> None:
+    fh = io.StringIO()
+    cli._write_serve_log(fh, "line\\n", verbose=True)
+    assert fh.getvalue() == "line\\n"
+    assert "line" in capsys.readouterr().out
 
 
 # Purpose: verify cli init.
