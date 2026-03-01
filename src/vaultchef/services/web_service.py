@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import re
 import shutil
+import sys
 from typing import Any
 
 from ..config import EffectiveConfig
@@ -24,7 +26,6 @@ def build_web_library(
     verbose: bool,
 ) -> tuple[Path, Path]:
     del cookbook_name
-    del verbose
 
     vault = resolve_vault_paths(cfg)
     project = resolve_project_paths(cfg)
@@ -39,16 +40,27 @@ def build_web_library(
     if not dry_run:
         build_bundle.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(project.webapp_template_dir, build_bundle, dirs_exist_ok=True)
+
+        image_dir = build_bundle / "assets" / "images"
+        image_warnings = _copy_recipe_images(library["recipes"], image_dir)
+        _strip_internal_recipe_fields(library["recipes"])
+
         content_index.parent.mkdir(parents=True, exist_ok=True)
         content_index.write_text(json.dumps(library, indent=2, ensure_ascii=False), encoding="utf-8")
         shutil.copytree(build_bundle, final_bundle, dirs_exist_ok=True)
+
+        if image_warnings:
+            for warning in image_warnings:
+                print(warning, file=sys.stderr)
+            if verbose:
+                print(f"Image warnings: {len(image_warnings)}")
 
     return content_index, final_bundle
 
 
 def _build_library_index(vault_root: Path, recipes_dir: Path, cookbooks_dir: Path) -> dict[str, Any]:
     recipe_sources = _collect_recipe_sources(recipes_dir)
-    recipes = _build_recipe_entries(recipe_sources)
+    recipes = _build_recipe_entries(recipe_sources, vault_root)
     recipe_by_path = {entry["path"]: entry for entry in recipes}
 
     cookbooks = _build_cookbook_entries(cookbooks_dir, vault_root, recipe_by_path)
@@ -66,10 +78,6 @@ def _build_library_index(vault_root: Path, recipes_dir: Path, cookbooks_dir: Pat
         "courses": sorted({recipe["course"] for recipe in recipes if recipe["course"]}),
         "flags": [flag for flag in _FLAG_KEYS if any(recipe["flags"].get(flag) for recipe in recipes)],
     }
-
-    # Remove internal fields before serialization.
-    for recipe in recipes:
-        recipe.pop("path", None)
 
     return {
         "version": 1,
@@ -95,7 +103,7 @@ def _collect_recipe_sources(recipes_dir: Path) -> list[tuple[Path, dict[str, Any
     return sources
 
 
-def _build_recipe_entries(recipe_sources: list[tuple[Path, dict[str, Any], str]]) -> list[dict[str, Any]]:
+def _build_recipe_entries(recipe_sources: list[tuple[Path, dict[str, Any], str]], vault_root: Path) -> list[dict[str, Any]]:
     used_slugs: set[str] = set()
     recipes: list[dict[str, Any]] = []
 
@@ -117,6 +125,9 @@ def _build_recipe_entries(recipe_sources: list[tuple[Path, dict[str, Any], str]]
 
         ingredients_items = _extract_list_items(ingredients_md, ordered=False)
         method_items = _extract_list_items(method_md, ordered=True)
+
+        image_raw = _image_meta_value(meta.get("image"))
+        image_source = _resolve_image_source(image_raw, vault_root)
 
         search_fields = [
             title,
@@ -146,7 +157,8 @@ def _build_recipe_entries(recipe_sources: list[tuple[Path, dict[str, Any], str]]
                 "cook": _string_value(meta.get("cook")) or "",
                 "rest": _string_value(meta.get("rest")) or "",
                 "difficulty": _int_value(meta.get("difficulty")),
-                "image": _string_value(meta.get("image")) or "",
+                "image": image_raw or "",
+                "image_alt": title,
                 "tags": sorted(tag for tag in tags if tag),
                 "flags": {flag: _coerce_bool(meta.get(flag)) for flag in _FLAG_KEYS},
                 "sections": {
@@ -160,6 +172,7 @@ def _build_recipe_entries(recipe_sources: list[tuple[Path, dict[str, Any], str]]
                 "cookbook_slugs": [],
                 "search_text": _collapse_whitespace(" ".join(search_fields)).lower(),
                 "path": str(path),
+                "_image_source": str(image_source) if image_source else "",
             }
         )
 
@@ -177,6 +190,12 @@ def _build_cookbook_entries(
     used_slugs: set[str] = set()
     cookbooks: list[dict[str, Any]] = []
 
+    recipe_by_slug = {
+        str(recipe.get("slug")): recipe
+        for recipe in recipe_by_path.values()
+        if str(recipe.get("slug") or "").strip()
+    }
+
     for path in sorted(cookbooks_dir.rglob("*.md")):
         try:
             text = path.read_text(encoding="utf-8")
@@ -188,18 +207,11 @@ def _build_cookbook_entries(
         title = _string_value(meta.get("title")) or path.stem
         slug = _unique_slug(_slugify(title), used_slugs)
 
-        recipe_slugs: list[str] = []
-        for match in EMBED_RE.finditer(text):
-            embed = match.group(1)
-            try:
-                recipe_path = resolve_embed_path(embed, str(vault_root)).resolve()
-            except Exception:
-                continue
-            recipe = recipe_by_path.get(str(recipe_path))
-            if recipe is None:
-                continue
-            recipe_slugs.append(recipe["slug"])
-            recipe["cookbook_slugs"].append(slug)
+        intro_html, blocks, recipe_slugs = _extract_cookbook_reader_blocks(doc.body, vault_root, recipe_by_path)
+        for recipe_slug in recipe_slugs:
+            recipe = recipe_by_slug.get(recipe_slug)
+            if recipe is not None:
+                recipe["cookbook_slugs"].append(slug)
 
         cookbooks.append(
             {
@@ -214,10 +226,81 @@ def _build_cookbook_entries(
                 "album_style": _string_value(meta.get("album_style")) or "",
                 "album_youtube_url": _string_value(meta.get("album_youtube_url")) or "",
                 "recipe_slugs": _dedupe_ordered(recipe_slugs),
+                "reader_intro_html": intro_html,
+                "reader_blocks": blocks,
             }
         )
 
     return cookbooks
+
+
+def _extract_cookbook_reader_blocks(
+    body: str,
+    vault_root: Path,
+    recipe_by_path: dict[str, dict[str, Any]],
+) -> tuple[str, list[dict[str, str]], list[str]]:
+    lines = body.splitlines()
+    leading: list[str] = []
+    remainder: list[str] = []
+
+    saw_structure = False
+    for line in lines:
+        stripped = line.strip()
+        if not saw_structure and stripped and not stripped.startswith("# ") and not EMBED_RE.search(line):
+            leading.append(line)
+            continue
+        saw_structure = saw_structure or bool(stripped)
+        remainder.append(line)
+
+    intro_html = _simple_markdown_to_html("\n".join(leading).strip())
+
+    blocks: list[dict[str, str]] = []
+    recipe_slugs: list[str] = []
+    text_buffer: list[str] = []
+
+    def flush_text() -> None:
+        nonlocal text_buffer
+        rendered = _simple_markdown_to_html("\n".join(text_buffer).strip())
+        if rendered:
+            blocks.append({"type": "text", "html": rendered})
+        text_buffer = []
+
+    for line in remainder:
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            flush_text()
+            title = stripped[2:].strip()
+            if title:
+                blocks.append({"type": "chapter", "title": title})
+            continue
+
+        matches = list(EMBED_RE.finditer(line))
+        if matches:
+            flush_text()
+            for match in matches:
+                embed = match.group(1)
+                try:
+                    recipe_path = resolve_embed_path(embed, str(vault_root)).resolve()
+                except Exception:
+                    continue
+                recipe = recipe_by_path.get(str(recipe_path))
+                if recipe is None:
+                    continue
+                recipe_slug = str(recipe.get("slug") or "").strip()
+                if not recipe_slug:
+                    continue
+                blocks.append({"type": "recipe", "slug": recipe_slug})
+                recipe_slugs.append(recipe_slug)
+
+            leftover = EMBED_RE.sub("", line).strip()
+            if leftover:
+                text_buffer.append(leftover)
+            continue
+
+        text_buffer.append(line)
+
+    flush_text()
+    return intro_html, blocks, recipe_slugs
 
 
 def _split_sections(body: str) -> dict[str, str]:
@@ -318,6 +401,63 @@ def _simple_markdown_to_html(text: str) -> str:
     close_paragraph()
     close_lists()
     return "\n".join(out)
+
+
+def _copy_recipe_images(recipes: list[dict[str, Any]], image_dir: Path) -> list[str]:
+    image_dir.mkdir(parents=True, exist_ok=True)
+    warnings: list[str] = []
+    used_names: set[str] = set()
+
+    for recipe in recipes:
+        source_text = str(recipe.get("_image_source") or "").strip()
+        if not source_text:
+            recipe["image"] = ""
+            continue
+
+        source = Path(source_text)
+        if not source.exists() or not source.is_file():
+            warnings.append(
+                f"Warning: missing image for recipe '{recipe.get('title', 'Untitled')}': {source}"
+            )
+            recipe["image"] = ""
+            continue
+
+        stem = _slugify(source.stem)
+        suffix = source.suffix.lower() or ".img"
+        digest = hashlib.sha1(str(source).encode("utf-8")).hexdigest()[:8]
+        base = f"{stem}-{digest}" if stem else digest
+        filename = _unique_slug(base, used_names) + suffix
+        target = image_dir / filename
+        shutil.copy2(source, target)
+        recipe["image"] = f"assets/images/{filename}"
+
+    return warnings
+
+
+def _strip_internal_recipe_fields(recipes: list[dict[str, Any]]) -> None:
+    for recipe in recipes:
+        recipe.pop("path", None)
+        recipe.pop("_image_source", None)
+
+
+def _image_meta_value(value: Any) -> str | None:
+    if isinstance(value, list):
+        if not value:
+            return None
+        value = value[0]
+    if value is None or isinstance(value, dict):
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _resolve_image_source(image_value: str | None, vault_root: Path) -> Path | None:
+    if not image_value:
+        return None
+    path = Path(image_value)
+    if not path.is_absolute():
+        path = vault_root / path
+    return path.resolve()
 
 
 def _slugify(text: str) -> str:

@@ -85,6 +85,74 @@ def test_build_writes_web_library_bundle(tmp_path: Path, example_vault: Path, te
     assert result.output_format == "web"
 
 
+# Purpose: verify web build copies recipe images and emits reader structure.
+def test_build_web_copies_images_and_reader_blocks(tmp_path: Path, temp_home: Path, monkeypatch, capsys) -> None:
+    vault = tmp_path / "Vault"
+    recipes = vault / "Recipes"
+    cookbooks = vault / "Cookbooks"
+    images = vault / "Images"
+    recipes.mkdir(parents=True)
+    cookbooks.mkdir(parents=True)
+    images.mkdir(parents=True)
+
+    (images / "hero.jpg").write_bytes(b"hero")
+    recipes.joinpath("R1.md").write_text(
+        "---\nrecipe_id: 1\ntitle: R1\nmenu: Nice one\nimage: Images/hero.jpg\n---\n\n## Ingredients\n- a\n\n## Method\n1. b\n",
+        encoding="utf-8",
+    )
+    cookbooks.joinpath("Book.md").write_text(
+        "---\ntitle: Book\nsubtitle: Reader Test\n---\n\nWelcome intro line.\n\n# Chapter One\n![[Recipes/R1]]\n",
+        encoding="utf-8",
+    )
+
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    cfg = resolve_config({"vault_path": str(vault), "project": str(tmp_path)})
+
+    result = build_cookbook("Book", cfg, dry_run=False, verbose=False, output_format="web")
+    assert result.output == (cwd / "vaultchef-web")
+
+    payload = json.loads((cwd / "vaultchef-web" / "content" / "index.json").read_text(encoding="utf-8"))
+    recipe = payload["recipes"][0]
+    assert recipe["image"].startswith("assets/images/")
+    assert recipe["image_alt"] == "R1"
+    assert (cwd / "vaultchef-web" / recipe["image"]).exists()
+
+    cookbook = payload["cookbooks"][0]
+    assert cookbook["reader_intro_html"] != ""
+    assert any(block.get("type") == "chapter" for block in cookbook["reader_blocks"])
+    assert any(block.get("type") == "recipe" for block in cookbook["reader_blocks"])
+
+    err = capsys.readouterr().err
+    assert "Warning: missing image" not in err
+
+
+# Purpose: verify web build warns on missing image paths.
+def test_build_web_warns_on_missing_images(tmp_path: Path, temp_home: Path, monkeypatch, capsys) -> None:
+    vault = tmp_path / "Vault"
+    recipes = vault / "Recipes"
+    cookbooks = vault / "Cookbooks"
+    recipes.mkdir(parents=True)
+    cookbooks.mkdir(parents=True)
+
+    recipes.joinpath("R1.md").write_text(
+        "---\nrecipe_id: 1\ntitle: R1\nimage: Images/missing.jpg\n---\n\n## Ingredients\n- a\n\n## Method\n1. b\n",
+        encoding="utf-8",
+    )
+    cookbooks.joinpath("Book.md").write_text("---\ntitle: Book\n---\n\n![[Recipes/R1]]\n", encoding="utf-8")
+
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    cfg = resolve_config({"vault_path": str(vault), "project": str(tmp_path)})
+
+    build_cookbook("Book", cfg, dry_run=False, verbose=True, output_format="web")
+    captured = capsys.readouterr()
+    assert "Warning: missing image for recipe 'R1'" in captured.err
+    assert "Image warnings: 1" in captured.out
+
+
 # Purpose: verify build missing cookbook.
 def test_build_missing_cookbook(tmp_path: Path, example_vault: Path, temp_home: Path) -> None:
     cfg = resolve_config({"vault_path": str(example_vault), "project": str(tmp_path)})

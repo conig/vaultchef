@@ -21,10 +21,23 @@ def test_webapp_script_includes_routes_and_morph() -> None:
     assert "/cookbooks/" in text
     assert "pendingMorphRect" in text
     assert "vc-morph-overlay" in text
-    assert "data-recipe-jump" in text
+    assert "data-scroll-target" in text
+    assert "reader_blocks" in text
+    assert "vc-recipe-card" in text
+    assert "renderRecipeHero" in text
+    assert "toYouTubeMusicUrl" in text
+    assert "data-vc-music-url" in text
+    assert "data-cookbook-nav-toggle" in text
+    assert "vc-nav-open" in text
 
 
 # Purpose: verify web app css preserves mobile tap target sizing.
 def test_webapp_css_tap_targets() -> None:
     text = (ROOT / "templates" / "webapp" / "app.css").read_text(encoding="utf-8")
     assert "min-height: 44px" in text
+    assert ".vc-mode-cookbook" in text
+    assert ".vc-cookbook-shell" in text
+    assert ".vc-hero" in text
+    assert ".vc-music-link" in text
+    assert ".vc-cookbook-nav-toggle" in text
+    assert ".vc-nav-icon-bar" in text

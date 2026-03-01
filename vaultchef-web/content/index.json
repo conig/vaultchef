@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-03-01T06:13:09.929755+00:00",
+  "generated_at": "2026-03-01T11:04:42.369745+00:00",
   "recipes": [
     {
       "id": "301",
@@ -16,7 +16,8 @@
       "cook": "",
       "rest": "",
       "difficulty": 1,
-      "image": "Recipes/src/301-berry-sparkler-mocktail.png",
+      "image": "assets/images/301-berry-sparkler-mocktail-c0aca7a2.png",
+      "image_alt": "Berry Sparkler Mocktail",
       "tags": [
         "berries",
         "mocktail",
@@ -67,7 +68,8 @@
       "cook": "",
       "rest": "",
       "difficulty": 1,
-      "image": "Recipes/src/302-caprese-salad.png",
+      "image": "assets/images/302-caprese-salad-5e42c93f.png",
+      "image_alt": "Caprese Salad with Balsamic Glaze",
       "tags": [
         "caprese",
         "no-cook",
@@ -119,7 +121,8 @@
       "cook": "",
       "rest": "10m",
       "difficulty": 1,
-      "image": "Recipes/src/304-chocolate-dipped-strawberries.jpg",
+      "image": "assets/images/304-chocolate-dipped-strawberries-8fd58fc4.jpg",
+      "image_alt": "Chocolate-Dipped Strawberries with Chantilly Cream",
       "tags": [
         "chocolate",
         "dessert",
@@ -170,7 +173,8 @@
       "cook": "14m",
       "rest": "5m",
       "difficulty": 1,
-      "image": "Recipes/src/417-coconut-sago-lime-glossed-pineapple.png",
+      "image": "assets/images/417-coconut-sago-lime-glossed-pineapple-740a8d13.png",
+      "image_alt": "Coconut Sago with Lime-Glossed Pineapple",
       "tags": [
         "coconut",
         "dessert",
@@ -228,7 +232,8 @@
       "cook": "15m",
       "rest": "",
       "difficulty": 2,
-      "image": "Recipes/src/303-creamy-garlic-prawn-pasta.png",
+      "image": "assets/images/303-creamy-garlic-prawn-pasta-5c6c1eb2.png",
+      "image_alt": "Creamy Garlic Prawn Pasta",
       "tags": [
         "creamy",
         "pasta",
@@ -284,7 +289,8 @@
       "cook": "25m",
       "rest": "",
       "difficulty": 2,
-      "image": "Recipes/src/402-crispy-chicken-with-lemon-caper-butter-parmesan-polenta-garlicky-greens.png",
+      "image": "assets/images/402-crispy-chicken-with-lemon-caper-butter-parmesan-polenta-garlicky-greens-0f7a201d.png",
+      "image_alt": "Crispy Chicken with Lemon-Caper Butter, Parmesan Polenta & Garlicky Greens",
       "tags": [
         "chicken",
         "pan-seared",
@@ -344,7 +350,8 @@
       "cook": "8m",
       "rest": "0m",
       "difficulty": 1,
-      "image": "Recipes/src/306-crispy-halloumi-with-hot-honey-mint-and-pistachio.png",
+      "image": "assets/images/306-crispy-halloumi-with-hot-honey-mint-and-pistachio-166a64ce.png",
+      "image_alt": "Crispy Halloumi with Hot Honey, Mint & Pistachio",
       "tags": [
         "halloumi",
         "pistachio",
@@ -400,7 +407,8 @@
       "cook": "",
       "rest": "30m",
       "difficulty": 1,
-      "image": "Recipes/src/403-espresso-tiramisu-cups-no-alcohol.png",
+      "image": "assets/images/403-espresso-tiramisu-cups-no-alcohol-555f7a74.png",
+      "image_alt": "Espresso Tiramisu Cups (No Alcohol)",
       "tags": [
         "coffee",
         "dessert",
@@ -455,7 +463,8 @@
       "cook": "45m",
       "rest": "",
       "difficulty": null,
-      "image": "",
+      "image": "assets/images/409-ginger-slice-d8daa1ea.png",
+      "image_alt": "Ginger Slice",
       "tags": [
         "Nan",
         "family",
@@ -509,7 +518,8 @@
       "cook": "0m",
       "rest": "0m",
       "difficulty": 1,
-      "image": "Recipes/src/410-lychee-ginger-lime-cooler.png",
+      "image": "assets/images/410-lychee-ginger-lime-cooler-546eaf69.png",
+      "image_alt": "Lychee Ginger Lime Cooler",
       "tags": [
         "drink",
         "ginger",
@@ -565,7 +575,8 @@
       "cook": "8m",
       "rest": "0m",
       "difficulty": 1,
-      "image": "Recipes/src/415-miso-butter-broccolini-toasted-sesame-almonds.png",
+      "image": "assets/images/415-miso-butter-broccolini-toasted-sesame-almonds-80b48790.png",
+      "image_alt": "Miso-Butter Broccolini with Toasted Sesame Almonds",
       "tags": [
         "broccolini",
         "miso",
@@ -623,7 +634,8 @@
       "cook": "10m",
       "rest": "0m",
       "difficulty": 1,
-      "image": "Recipes/src/411-miso-sesame-mushroom-lettuce-cups.png",
+      "image": "assets/images/411-miso-sesame-mushroom-lettuce-cups-c55bbecc.png",
+      "image_alt": "Miso-Sesame Mushroom Lettuce Cups",
       "tags": [
         "lettuce-cups",
         "mushrooms",
@@ -683,7 +695,8 @@
       "cook": "",
       "rest": "20m",
       "difficulty": 1,
-      "image": "Recipes/src/408-no-bake-lemon-mascarpone-pots-with-pistachio-crunch.png",
+      "image": "assets/images/408-no-bake-lemon-mascarpone-pots-with-pistachio-crunch-2e8c383d.png",
+      "image_alt": "No-Bake Lemon Mascarpone Pots with Pistachio Crunch",
       "tags": [
         "dessert",
         "lemon",
@@ -741,7 +754,8 @@
       "cook": "20m",
       "rest": "3m",
       "difficulty": 2,
-      "image": "Recipes/src/416-one-pan-ginger-miso-chicken-rice-bok-choy.png",
+      "image": "assets/images/416-one-pan-ginger-miso-chicken-rice-bok-choy-386d46f1.png",
+      "image_alt": "One-Pan Ginger Miso Chicken Rice with Bok Choy",
       "tags": [
         "chicken",
         "main",
@@ -803,7 +817,8 @@
       "cook": "18m",
       "rest": "",
       "difficulty": 2,
-      "image": "Recipes/src/407-one-pan-lemon-parmesan-gnocchi-with-spinach.png",
+      "image": "assets/images/407-one-pan-lemon-parmesan-gnocchi-with-spinach-5515a614.png",
+      "image_alt": "One-Pan Lemon Parmesan Gnocchi with Spinach",
       "tags": [
         "gnocchi",
         "lemon",
@@ -863,7 +878,8 @@
       "cook": "18m",
       "rest": "2m",
       "difficulty": 2,
-      "image": "Recipes/src/307-one-pan-saffron-prawn-orzo-with-spinach.png",
+      "image": "assets/images/307-one-pan-saffron-prawn-orzo-with-spinach-447f7c31.png",
+      "image_alt": "One-Pan Saffron Prawn Orzo with Spinach",
       "tags": [
         "main",
         "one-pan",
@@ -925,7 +941,8 @@
       "cook": "16m",
       "rest": "2m",
       "difficulty": 2,
-      "image": "Recipes/src/412-one-pan-soy-honey-chicken-udon-with-broccolini.png",
+      "image": "assets/images/412-one-pan-soy-honey-chicken-udon-with-broccolini-404d810e.png",
+      "image_alt": "One-Pan Soy-Honey Chicken Udon with Broccolini",
       "tags": [
         "chicken",
         "main",
@@ -988,7 +1005,8 @@
       "cook": "0m",
       "rest": "0m",
       "difficulty": 1,
-      "image": "Recipes/src/414-pear-ginger-yuzu-soda.png",
+      "image": "assets/images/414-pear-ginger-yuzu-soda-cd248ece.png",
+      "image_alt": "Pear, Ginger & Yuzu Soda",
       "tags": [
         "drink",
         "ginger",
@@ -1044,7 +1062,8 @@
       "cook": "",
       "rest": "",
       "difficulty": 1,
-      "image": "Recipes/src/404-pink-grapefruit-thyme-ginger-spritz.png",
+      "image": "assets/images/404-pink-grapefruit-thyme-ginger-spritz-2d531391.png",
+      "image_alt": "Pink Grapefruit, Thyme & Ginger Spritz",
       "tags": [
         "citrus",
         "fizzy",
@@ -1099,7 +1118,8 @@
       "cook": "0m",
       "rest": "0m",
       "difficulty": 1,
-      "image": "Recipes/src/305-rosemary-blackberry-verjus-fizz.png",
+      "image": "assets/images/305-rosemary-blackberry-verjus-fizz-1e47295d.png",
+      "image_alt": "Rosemary Blackberry Verjus Fizz",
       "tags": [
         "blackberry",
         "drink",
@@ -1157,7 +1177,8 @@
       "cook": "",
       "rest": "",
       "difficulty": 1,
-      "image": "Recipes/src/405-sparkling-basil-limonata.png",
+      "image": "assets/images/405-sparkling-basil-limonata-eb77901e.png",
+      "image_alt": "Sparkling Basil Limonata",
       "tags": [
         "basil",
         "citrus",
@@ -1212,7 +1233,8 @@
       "cook": "15m",
       "rest": "5m",
       "difficulty": 1,
-      "image": "Recipes/src/413-toasted-coconut-mango-rice-cups.png",
+      "image": "assets/images/413-toasted-coconut-mango-rice-cups-df103684.png",
+      "image_alt": "Toasted Coconut Mango Rice Cups",
       "tags": [
         "coconut",
         "dessert",
@@ -1269,7 +1291,8 @@
       "cook": "5m",
       "rest": "",
       "difficulty": 1,
-      "image": "Recipes/src/401-warm-beetroot-goats-cheese-orange-walnut-salad.png",
+      "image": "assets/images/401-warm-beetroot-goats-cheese-orange-walnut-salad-e29ca2a4.png",
+      "image_alt": "Warm Beetroot, Goat's Cheese, Orange & Walnut Salad",
       "tags": [
         "beetroot",
         "quick",
@@ -1329,7 +1352,8 @@
       "cook": "12m",
       "rest": "0m",
       "difficulty": 1,
-      "image": "Recipes/src/308-warm-honeyed-pears-with-vanilla-ricotta-and-walnut-crunch.png",
+      "image": "assets/images/308-warm-honeyed-pears-with-vanilla-ricotta-and-walnut-crunch-ade4a700.png",
+      "image_alt": "Warm Honeyed Pears with Vanilla Ricotta & Walnut Crunch",
       "tags": [
         "dessert",
         "pears",
@@ -1387,7 +1411,8 @@
       "cook": "8m",
       "rest": "",
       "difficulty": 1,
-      "image": "Recipes/src/406-whipped-feta-artichoke-toasts-with-lemon.png",
+      "image": "assets/images/406-whipped-feta-artichoke-toasts-with-lemon-8dbcf10e.png",
+      "image_alt": "Whipped Feta Artichoke Toasts with Lemon",
       "tags": [
         "artichoke",
         "feta",
@@ -1448,6 +1473,25 @@
         "recipe-401-warm-beetroot-goats-cheese-orange-walnut-salad",
         "recipe-402-crispy-chicken-with-lemon-caper-butter-parmesan-polenta-garlicky-greens",
         "recipe-403-espresso-tiramisu-cups-no-alcohol"
+      ],
+      "reader_intro_html": "",
+      "reader_blocks": [
+        {
+          "type": "recipe",
+          "slug": "recipe-404-pink-grapefruit-thyme-ginger-spritz"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-401-warm-beetroot-goats-cheese-orange-walnut-salad"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-402-crispy-chicken-with-lemon-caper-butter-parmesan-polenta-garlicky-greens"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-403-espresso-tiramisu-cups-no-alcohol"
+        }
       ]
     },
     {
@@ -1466,6 +1510,25 @@
         "recipe-302-caprese-salad-with-balsamic-glaze",
         "recipe-303-creamy-garlic-prawn-pasta",
         "recipe-304-chocolate-dipped-strawberries-with-chantilly-cream"
+      ],
+      "reader_intro_html": "",
+      "reader_blocks": [
+        {
+          "type": "recipe",
+          "slug": "recipe-301-berry-sparkler-mocktail"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-302-caprese-salad-with-balsamic-glaze"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-303-creamy-garlic-prawn-pasta"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-304-chocolate-dipped-strawberries-with-chantilly-cream"
+        }
       ]
     },
     {
@@ -1484,6 +1547,25 @@
         "recipe-406-whipped-feta-artichoke-toasts-with-lemon",
         "recipe-407-one-pan-lemon-parmesan-gnocchi-with-spinach",
         "recipe-408-no-bake-lemon-mascarpone-pots-with-pistachio-crunch"
+      ],
+      "reader_intro_html": "",
+      "reader_blocks": [
+        {
+          "type": "recipe",
+          "slug": "recipe-405-sparkling-basil-limonata"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-406-whipped-feta-artichoke-toasts-with-lemon"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-407-one-pan-lemon-parmesan-gnocchi-with-spinach"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-408-no-bake-lemon-mascarpone-pots-with-pistachio-crunch"
+        }
       ]
     },
     {
@@ -1502,6 +1584,25 @@
         "recipe-415-miso-butter-broccolini-with-toasted-sesame-almonds",
         "recipe-416-one-pan-ginger-miso-chicken-rice-with-bok-choy",
         "recipe-417-coconut-sago-with-lime-glossed-pineapple"
+      ],
+      "reader_intro_html": "",
+      "reader_blocks": [
+        {
+          "type": "recipe",
+          "slug": "recipe-414-pear-ginger-yuzu-soda"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-415-miso-butter-broccolini-with-toasted-sesame-almonds"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-416-one-pan-ginger-miso-chicken-rice-with-bok-choy"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-417-coconut-sago-with-lime-glossed-pineapple"
+        }
       ]
     },
     {
@@ -1520,6 +1621,25 @@
         "recipe-411-miso-sesame-mushroom-lettuce-cups",
         "recipe-412-one-pan-soy-honey-chicken-udon-with-broccolini",
         "recipe-413-toasted-coconut-mango-rice-cups"
+      ],
+      "reader_intro_html": "",
+      "reader_blocks": [
+        {
+          "type": "recipe",
+          "slug": "recipe-410-lychee-ginger-lime-cooler"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-411-miso-sesame-mushroom-lettuce-cups"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-412-one-pan-soy-honey-chicken-udon-with-broccolini"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-413-toasted-coconut-mango-rice-cups"
+        }
       ]
     },
     {
@@ -1538,6 +1658,25 @@
         "recipe-306-crispy-halloumi-with-hot-honey-mint-pistachio",
         "recipe-307-one-pan-saffron-prawn-orzo-with-spinach",
         "recipe-308-warm-honeyed-pears-with-vanilla-ricotta-walnut-crunch"
+      ],
+      "reader_intro_html": "",
+      "reader_blocks": [
+        {
+          "type": "recipe",
+          "slug": "recipe-305-rosemary-blackberry-verjus-fizz"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-306-crispy-halloumi-with-hot-honey-mint-pistachio"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-307-one-pan-saffron-prawn-orzo-with-spinach"
+        },
+        {
+          "type": "recipe",
+          "slug": "recipe-308-warm-honeyed-pears-with-vanilla-ricotta-walnut-crunch"
+        }
       ]
     },
     {
@@ -1551,7 +1690,18 @@
       "album_artist": "",
       "album_style": "",
       "album_youtube_url": "",
-      "recipe_slugs": []
+      "recipe_slugs": [],
+      "reader_intro_html": "",
+      "reader_blocks": [
+        {
+          "type": "chapter",
+          "title": "Desserts"
+        },
+        {
+          "type": "chapter",
+          "title": "Mains"
+        }
+      ]
     }
   ],
   "facets": {

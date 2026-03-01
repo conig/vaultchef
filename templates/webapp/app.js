@@ -17,6 +17,7 @@ const state = {
 };
 
 const refs = {
+  app: document.getElementById("vc-app"),
   tabRecipes: document.getElementById("vc-tab-recipes"),
   tabCookbooks: document.getElementById("vc-tab-cookbooks"),
   searchInput: document.getElementById("vc-search-input"),
@@ -33,18 +34,102 @@ let cookbooksBySlug = new Map();
 let pendingMorphRect = null;
 let activeRecipeList = [];
 let activeCookbookList = [];
+let disposeCookbookView = null;
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const text = (value) => String(value || "").trim();
 const escapeHtml = (value) =>
   text(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char] || char));
+const normalize = (value) => text(value).toLowerCase().replace(/\s+/g, " ").trim();
+const slugify = (value) =>
+  normalize(value)
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "section";
 
-const normalize = (value) =>
-  text(value)
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
+const toYouTubeMusicUrl = (raw) => {
+  if (!raw) return null;
+
+  let url;
+  try {
+    url = new URL(raw, window.location.href);
+  } catch (_) {
+    return null;
+  }
+
+  const host = url.hostname.replace(/^www\./, "").toLowerCase();
+  const isYouTubeHost =
+    host === "youtube.com" || host === "m.youtube.com" || host === "music.youtube.com" || host === "youtu.be";
+  if (!isYouTubeHost) return null;
+
+  const parts = url.pathname.split("/").filter(Boolean);
+  let videoId = "";
+  let listId = url.searchParams.get("list") || "";
+
+  if (host === "youtu.be") {
+    videoId = parts[0] || "";
+  } else if (parts[0] === "watch") {
+    videoId = url.searchParams.get("v") || "";
+  } else if (parts[0] === "shorts" || parts[0] === "live" || parts[0] === "embed") {
+    videoId = parts[1] || "";
+  } else if (parts[0] === "playlist") {
+    listId = url.searchParams.get("list") || "";
+  }
+
+  if (videoId) {
+    const params = new URLSearchParams({ v: videoId });
+    if (listId) params.set("list", listId);
+    return `https://music.youtube.com/watch?${params.toString()}`;
+  }
+  if (listId) return `https://music.youtube.com/playlist?list=${encodeURIComponent(listId)}`;
+  return null;
+};
+
+const hydrateMusicLinks = (root) => {
+  if (!root) return;
+  root.querySelectorAll(".vc-music-link[data-vc-music-url]").forEach((link) => {
+    const raw = link.dataset.vcMusicUrl || "";
+    const musicUrl = toYouTubeMusicUrl(raw);
+    if (musicUrl) link.href = musicUrl;
+  });
+};
+
+const syncCookbookHeaderHeight = () => {
+  const shell = refs.detail.querySelector(".vc-cookbook-shell");
+  const header = refs.detail.querySelector(".vc-cookbook-header");
+  if (!shell || !header) return;
+  const height = Math.ceil(header.getBoundingClientRect().height);
+  if (height > 0) shell.style.setProperty("--vc-header-height", `${height}px`);
+};
+
+const syncCookbookRailGeometry = () => {
+  const rail = refs.detail.querySelector(".vc-cookbook-rail");
+  const railInner = refs.detail.querySelector(".vc-cookbook-rail-inner");
+  if (!rail || !railInner) return;
+
+  if (!window.matchMedia("(min-width: 960px)").matches) {
+    railInner.classList.remove("vc-cookbook-rail-fixed");
+    railInner.style.removeProperty("--vc-rail-left");
+    railInner.style.removeProperty("--vc-rail-width");
+    return;
+  }
+
+  const rect = rail.getBoundingClientRect();
+  railInner.style.setProperty("--vc-rail-left", `${Math.round(rect.left)}px`);
+  railInner.style.setProperty("--vc-rail-width", `${Math.round(rect.width)}px`);
+  railInner.classList.add("vc-cookbook-rail-fixed");
+};
+
+const scrollCookbookTarget = (targetId) => {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  const shell = refs.detail.querySelector(".vc-cookbook-shell");
+  const headerHeight = shell ? Number.parseInt(getComputedStyle(shell).getPropertyValue("--vc-header-height"), 10) || 0 : 0;
+  const top = target.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
+  window.scrollTo({ top: Math.max(top, 0), behavior: reducedMotion ? "auto" : "smooth" });
+};
 
 const parseHash = () => {
   const raw = window.location.hash || "#/recipes";
@@ -56,18 +141,8 @@ const parseHash = () => {
   const slug = decodeURIComponent(parts[1] || "");
 
   const params = new URLSearchParams(queryRaw || "");
-  const flags = new Set(
-    text(params.get("flags"))
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean)
-  );
-  const tags = new Set(
-    text(params.get("tags"))
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean)
-  );
+  const flags = new Set(text(params.get("flags")).split(",").map((item) => item.trim()).filter(Boolean));
+  const tags = new Set(text(params.get("tags")).split(",").map((item) => item.trim()).filter(Boolean));
 
   return {
     tab,
@@ -83,15 +158,9 @@ const encodeHash = () => {
   const path = state.tab === "recipes" ? `/recipes/${encodeURIComponent(state.recipeSlug || "")}` : `/cookbooks/${encodeURIComponent(state.cookbookSlug || "")}`;
   const params = new URLSearchParams();
 
-  if (state.q) {
-    params.set("q", state.q);
-  }
-  if (state.flags.size > 0) {
-    params.set("flags", Array.from(state.flags).sort().join(","));
-  }
-  if (state.tags.size > 0 && state.tab === "recipes") {
-    params.set("tags", Array.from(state.tags).sort().join(","));
-  }
+  if (state.q) params.set("q", state.q);
+  if (state.flags.size > 0) params.set("flags", Array.from(state.flags).sort().join(","));
+  if (state.tags.size > 0 && state.tab === "recipes") params.set("tags", Array.from(state.tags).sort().join(","));
 
   const query = params.toString();
   return `#${path}${query ? `?${query}` : ""}`;
@@ -126,38 +195,21 @@ const updateHash = (replace = false) => {
 
 const matchesRecipeFilters = (recipe) => {
   const needle = normalize(state.q);
-  if (needle && !text(recipe.search_text).includes(needle)) {
-    return false;
-  }
+  if (needle && !text(recipe.search_text).includes(needle)) return false;
 
   for (const flag of state.flags) {
-    if (!recipe.flags || recipe.flags[flag] !== true) {
-      return false;
-    }
+    if (!recipe.flags || recipe.flags[flag] !== true) return false;
   }
-
   for (const tag of state.tags) {
-    if (!recipe.tags.includes(tag)) {
-      return false;
-    }
+    if (!recipe.tags.includes(tag)) return false;
   }
-
   return true;
 };
 
 const matchesCookbookFilters = (cookbook) => {
   const needle = normalize(state.q);
-  if (!needle) {
-    return true;
-  }
-
-  const haystack = normalize([
-    cookbook.title,
-    cookbook.subtitle,
-    cookbook.author,
-    cookbook.date,
-  ].join(" "));
-
+  if (!needle) return true;
+  const haystack = normalize([cookbook.title, cookbook.subtitle, cookbook.author, cookbook.date].join(" "));
   return haystack.includes(needle);
 };
 
@@ -174,33 +226,31 @@ const setTab = (tab) => {
 };
 
 const openRecipe = (slug, sourceCard = null) => {
-  if (sourceCard instanceof HTMLElement) {
-    pendingMorphRect = sourceCard.getBoundingClientRect();
-  }
+  if (sourceCard instanceof HTMLElement) pendingMorphRect = sourceCard.getBoundingClientRect();
   state.tab = "recipes";
   state.recipeSlug = slug;
   updateHash();
 };
 
 const openCookbook = (slug, sourceCard = null) => {
-  if (sourceCard instanceof HTMLElement) {
-    pendingMorphRect = sourceCard.getBoundingClientRect();
-  }
+  if (sourceCard instanceof HTMLElement) pendingMorphRect = sourceCard.getBoundingClientRect();
   state.tab = "cookbooks";
   state.cookbookSlug = slug;
   updateHash();
 };
 
-const clearNode = (node) => {
-  while (node.firstChild) {
-    node.removeChild(node.firstChild);
-  }
+const closeCookbook = () => {
+  state.cookbookSlug = "";
+  updateHash();
 };
 
-const renderTabs = () => {
-  const recipeSelected = state.tab === "recipes";
-  refs.tabRecipes.setAttribute("aria-selected", recipeSelected ? "true" : "false");
-  refs.tabCookbooks.setAttribute("aria-selected", recipeSelected ? "false" : "true");
+const clearNode = (node) => {
+  while (node.firstChild) node.removeChild(node.firstChild);
+};
+
+const clearCookbookBindings = () => {
+  if (typeof disposeCookbookView === "function") disposeCookbookView();
+  disposeCookbookView = null;
 };
 
 const buildMetaPills = (values) => {
@@ -215,21 +265,28 @@ const buildMetaPills = (values) => {
   return row;
 };
 
-const makeCard = ({ title, body, pills, onOpen }) => {
+const makeCard = ({ title, body, pills, image, onOpen }) => {
   const card = refs.cardTemplate.content.firstElementChild.cloneNode(true);
+
+  if (image) {
+    const figure = document.createElement("figure");
+    figure.className = "vc-card-hero";
+    figure.innerHTML = `<img src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async" />`;
+    card.appendChild(figure);
+  }
+
   const heading = document.createElement("h2");
   heading.textContent = title;
   card.appendChild(heading);
 
   if (body) {
     const paragraph = document.createElement("p");
+    paragraph.className = "vc-card-body";
     paragraph.textContent = body;
     card.appendChild(paragraph);
   }
 
-  if (pills && pills.length > 0) {
-    card.appendChild(buildMetaPills(pills));
-  }
+  if (pills && pills.length > 0) card.appendChild(buildMetaPills(pills));
 
   card.addEventListener("click", () => onOpen(card));
   card.addEventListener("keydown", (event) => {
@@ -242,12 +299,18 @@ const makeCard = ({ title, body, pills, onOpen }) => {
   return card;
 };
 
+const renderTabs = () => {
+  const recipeSelected = state.tab === "recipes";
+  refs.tabRecipes.setAttribute("aria-selected", recipeSelected ? "true" : "false");
+  refs.tabCookbooks.setAttribute("aria-selected", recipeSelected ? "false" : "true");
+
+  const cookbookFullscreen = state.tab === "cookbooks" && Boolean(state.cookbookSlug);
+  refs.app.classList.toggle("vc-mode-cookbook", cookbookFullscreen);
+};
+
 const renderFilters = () => {
   clearNode(refs.filterRow);
-
-  if (state.tab !== "recipes") {
-    return;
-  }
+  if (state.tab !== "recipes" || state.cookbookSlug) return;
 
   const activeFlags = data.facets.flags || [];
   activeFlags.forEach((flag) => {
@@ -257,30 +320,23 @@ const renderFilters = () => {
     chip.textContent = FLAG_LABELS[flag] || flag;
     chip.setAttribute("aria-pressed", state.flags.has(flag) ? "true" : "false");
     chip.addEventListener("click", () => {
-      if (state.flags.has(flag)) {
-        state.flags.delete(flag);
-      } else {
-        state.flags.add(flag);
-      }
+      if (state.flags.has(flag)) state.flags.delete(flag);
+      else state.flags.add(flag);
       state.recipeSlug = "";
       updateHash(true);
     });
     refs.filterRow.appendChild(chip);
   });
 
-  const tagLimit = 12;
-  (data.facets.tags || []).slice(0, tagLimit).forEach((tag) => {
+  (data.facets.tags || []).slice(0, 10).forEach((tag) => {
     const chip = document.createElement("button");
     chip.type = "button";
     chip.className = "vc-chip";
     chip.textContent = `#${tag}`;
     chip.setAttribute("aria-pressed", state.tags.has(tag) ? "true" : "false");
     chip.addEventListener("click", () => {
-      if (state.tags.has(tag)) {
-        state.tags.delete(tag);
-      } else {
-        state.tags.add(tag);
-      }
+      if (state.tags.has(tag)) state.tags.delete(tag);
+      else state.tags.add(tag);
       state.recipeSlug = "";
       updateHash(true);
     });
@@ -303,15 +359,14 @@ const renderRecipesList = () => {
   activeRecipeList.forEach((recipe) => {
     const pills = [];
     if (recipe.course) pills.push(recipe.course);
-    if (recipe.category) pills.push(recipe.category);
-    if (recipe.prep) pills.push(`Prep ${recipe.prep}`);
-    if (recipe.cook) pills.push(`Cook ${recipe.cook}`);
-    if (recipe.tags.length > 0) pills.push(`#${recipe.tags[0]}`);
+    if (recipe.serves) pills.push(`Serves ${recipe.serves}`);
+    if (recipe.prep || recipe.cook) pills.push([recipe.prep, recipe.cook].filter(Boolean).join(" + "));
 
     const card = makeCard({
       title: recipe.title,
       body: recipe.menu,
       pills,
+      image: recipe.image,
       onOpen: (node) => openRecipe(recipe.slug, node),
     });
     refs.list.appendChild(card);
@@ -340,30 +395,24 @@ const renderCookbooksList = () => {
       title: cookbook.title,
       body: cookbook.subtitle || cookbook.description,
       pills,
+      image: "",
       onOpen: (node) => openCookbook(cookbook.slug, node),
     });
     refs.list.appendChild(card);
   });
 };
 
-const recipeLinksHtml = (slugs) =>
-  slugs
-    .map((slug) => {
-      const recipe = recipesBySlug.get(slug);
-      if (!recipe) {
-        return "";
-      }
-      return `<button class="vc-chip" type="button" data-recipe-jump="${recipe.slug}">${escapeHtml(recipe.title)}</button>`;
-    })
-    .join(" ");
+const renderRecipeHero = (recipe) => {
+  if (!recipe.image) return "";
+  const alt = escapeHtml(recipe.image_alt || recipe.title || "Recipe image");
+  return `<figure class="vc-hero"><img src="${escapeHtml(recipe.image)}" alt="${alt}" loading="lazy" decoding="async" /></figure>`;
+};
 
 const cookbookLinksHtml = (slugs) =>
   slugs
     .map((slug) => {
       const cookbook = cookbooksBySlug.get(slug);
-      if (!cookbook) {
-        return "";
-      }
+      if (!cookbook) return "";
       return `<button class="vc-chip" type="button" data-cookbook-jump="${cookbook.slug}">${escapeHtml(cookbook.title)}</button>`;
     })
     .join(" ");
@@ -378,9 +427,10 @@ const renderRecipeDetail = () => {
   }
 
   refs.detail.innerHTML = `
-    <div class="vc-detail-card" id="vc-detail-card">
+    <div class="vc-detail-surface" id="vc-detail-surface">
       <h2>${escapeHtml(recipe.title)}</h2>
-      ${recipe.menu ? `<p>${escapeHtml(recipe.menu)}</p>` : ""}
+      ${recipe.menu ? `<p class="vc-lede">${escapeHtml(recipe.menu)}</p>` : ""}
+      ${renderRecipeHero(recipe)}
       <div class="vc-meta-row">
         ${recipe.serves ? `<span class="vc-pill">Serves ${escapeHtml(recipe.serves)}</span>` : ""}
         ${recipe.prep ? `<span class="vc-pill">Prep ${escapeHtml(recipe.prep)}</span>` : ""}
@@ -411,42 +461,244 @@ const renderRecipeDetail = () => {
   runMorphAnimation();
 };
 
-const renderCookbookDetail = () => {
+const renderCookbookRecipeCard = (recipe) => {
+  return `
+    <article class="vc-recipe-card" id="recipe-${escapeHtml(recipe.slug)}">
+      <div class="vc-recipe-shell">
+        <div class="vc-recipe-col vc-col-left">
+          <h2 class="vc-recipe-title">${escapeHtml(recipe.title)}</h2>
+          ${recipe.menu ? `<p class="vc-recipe-intro">${escapeHtml(recipe.menu)}</p>` : ""}
+          ${renderRecipeHero(recipe)}
+          <section class="vc-section vc-section-ingredients">
+            <h2 class="vc-ingredients-heading">Ingredients</h2>
+            ${recipe.sections.ingredients_html || "<p>No ingredients section found.</p>"}
+          </section>
+        </div>
+        <div class="vc-recipe-col vc-col-right">
+          <section class="vc-section vc-section-method">
+            <h2 class="vc-method-heading">Method</h2>
+            ${recipe.sections.method_html || "<p>No method section found.</p>"}
+          </section>
+          ${recipe.sections.notes_html ? `<section class="vc-section vc-section-notes"><h2 class="vc-notes-heading">Notes</h2>${recipe.sections.notes_html}</section>` : ""}
+        </div>
+      </div>
+    </article>
+  `;
+};
+
+const renderCookbookFullscreen = () => {
+  clearCookbookBindings();
   const cookbook = cookbooksBySlug.get(state.cookbookSlug);
   if (!cookbook) {
-    refs.detail.hidden = true;
-    refs.detailEmpty.hidden = false;
-    refs.detailEmpty.textContent = "Choose a cookbook from the list to see details.";
+    state.cookbookSlug = "";
+    updateHash(true);
     return;
   }
 
-  refs.detail.innerHTML = `
-    <div class="vc-detail-card" id="vc-detail-card">
-      <h2>${escapeHtml(cookbook.title)}</h2>
-      ${cookbook.subtitle ? `<p>${escapeHtml(cookbook.subtitle)}</p>` : ""}
-      <div class="vc-meta-row">
-        ${cookbook.author ? `<span class="vc-pill">${escapeHtml(cookbook.author)}</span>` : ""}
-        ${cookbook.date ? `<span class="vc-pill">${escapeHtml(cookbook.date)}</span>` : ""}
-        <span class="vc-pill">${cookbook.recipe_slugs.length} recipes</span>
-      </div>
-      ${cookbook.description ? `<section><h3>Description</h3><p>${escapeHtml(cookbook.description)}</p></section>` : ""}
-      ${cookbook.album_title || cookbook.album_artist || cookbook.album_style ? `
-      <section>
-        <h3>Music Pairing</h3>
-        <div class="vc-meta-row">
-          ${cookbook.album_title ? `<span class="vc-pill">${escapeHtml(cookbook.album_title)}</span>` : ""}
-          ${cookbook.album_artist ? `<span class="vc-pill">${escapeHtml(cookbook.album_artist)}</span>` : ""}
-          ${cookbook.album_style ? `<span class="vc-pill">${escapeHtml(cookbook.album_style)}</span>` : ""}
+  const blocks = cookbook.reader_blocks || [];
+  const navItems = [];
+  const bodyParts = [];
+
+  blocks.forEach((block, idx) => {
+    if (block.type === "chapter") {
+      const chapterId = `chapter-${idx}-${slugify(block.title || "")}`;
+      navItems.push(`<li><button class="vc-nav-link" type="button" data-scroll-target="${chapterId}">${escapeHtml(block.title || "Chapter")}</button></li>`);
+      bodyParts.push(`<h1 class="vc-chapter-title" id="${chapterId}">${escapeHtml(block.title || "Chapter")}</h1>`);
+      return;
+    }
+
+    if (block.type === "text") {
+      bodyParts.push(`<div class="vc-reader-text">${block.html || ""}</div>`);
+      return;
+    }
+
+    if (block.type === "recipe") {
+      const recipe = recipesBySlug.get(block.slug || "");
+      if (!recipe) return;
+      navItems.push(
+        `<li class="vc-nav-item-recipe"><button class="vc-nav-link" type="button" data-scroll-target="recipe-${escapeHtml(recipe.slug)}">${escapeHtml(recipe.title)}</button></li>`,
+      );
+      bodyParts.push(renderCookbookRecipeCard(recipe));
+    }
+  });
+
+  const musicPanel = cookbook.album_title || cookbook.album_artist || cookbook.album_style || cookbook.album_youtube_url
+    ? `
+      <section class="vc-music-panel" aria-label="Music pairing">
+        <h2 class="vc-music-title">Music Pairing</h2>
+        <div class="vc-music-meta">
+          ${cookbook.album_title ? `<p><strong>Album:</strong> ${escapeHtml(cookbook.album_title)}</p>` : ""}
+          ${cookbook.album_artist ? `<p><strong>Artist:</strong> ${escapeHtml(cookbook.album_artist)}</p>` : ""}
+          ${cookbook.album_style ? `<p><strong>Style:</strong> ${escapeHtml(cookbook.album_style)}</p>` : ""}
+          ${
+            cookbook.album_youtube_url
+              ? `
+            <p class="vc-music-links">
+              <a class="vc-music-link" data-vc-music-url="${escapeHtml(cookbook.album_youtube_url)}" href="${escapeHtml(cookbook.album_youtube_url)}" target="_blank" rel="noopener noreferrer">Play on YouTube Music</a>
+            </p>
+          `
+              : ""
+          }
         </div>
       </section>
-      ` : ""}
-      ${cookbook.recipe_slugs.length > 0 ? `<section><h3>Recipes</h3><div class="vc-meta-row">${recipeLinksHtml(cookbook.recipe_slugs)}</div></section>` : ""}
+    `
+    : "";
+
+  refs.detail.innerHTML = `
+    <div class="vc-cookbook-shell" id="vc-detail-surface">
+      <header class="vc-cookbook-header">
+        <div class="vc-cookbook-heading">
+          <h2>${escapeHtml(cookbook.title)}</h2>
+          ${cookbook.subtitle ? `<p class="vc-lede">${escapeHtml(cookbook.subtitle)}</p>` : ""}
+          <div class="vc-meta-row">
+            ${cookbook.author ? `<span class="vc-pill">${escapeHtml(cookbook.author)}</span>` : ""}
+            ${cookbook.date ? `<span class="vc-pill">${escapeHtml(cookbook.date)}</span>` : ""}
+            <span class="vc-pill">${cookbook.recipe_slugs.length} recipes</span>
+          </div>
+        </div>
+        <button
+          class="vc-cookbook-nav-toggle"
+          type="button"
+          data-cookbook-nav-toggle
+          aria-expanded="false"
+          aria-controls="vc-cookbook-menu"
+          aria-label="Open navigation menu"
+        >
+          <span class="vc-nav-icon" aria-hidden="true">
+            <span class="vc-nav-icon-bar"></span>
+            <span class="vc-nav-icon-bar"></span>
+            <span class="vc-nav-icon-bar"></span>
+          </span>
+        </button>
+      </header>
+      <div class="vc-cookbook-layout">
+        <aside class="vc-cookbook-rail" aria-label="Cookbook navigation">
+          <div class="vc-cookbook-rail-inner" id="vc-cookbook-menu">
+            <div class="vc-cookbook-menu-actions">
+              <button class="vc-back-btn vc-back-btn-menu" type="button" data-back-library>Back to cookbooks</button>
+            </div>
+            <section class="vc-nav-panel vc-nav-panel-inline">
+              <h2 class="vc-nav-title">Contents</h2>
+              <ol class="vc-nav-list">${navItems.join("\n")}</ol>
+            </section>
+            ${musicPanel}
+          </div>
+        </aside>
+        <main class="vc-cookbook-content">
+          ${cookbook.reader_intro_html ? `<section class="vc-reader-text">${cookbook.reader_intro_html}</section>` : ""}
+          ${cookbook.description ? `<section class="vc-reader-text"><p>${escapeHtml(cookbook.description)}</p></section>` : ""}
+          ${bodyParts.join("\n")}
+        </main>
+      </div>
     </div>
   `;
 
-  refs.detail.querySelectorAll("[data-recipe-jump]").forEach((button) => {
-    button.addEventListener("click", () => openRecipe(button.dataset.recipeJump || ""));
+  const shell = refs.detail.querySelector(".vc-cookbook-shell");
+  const navToggle = refs.detail.querySelector("[data-cookbook-nav-toggle]");
+  const railInner = refs.detail.querySelector(".vc-cookbook-rail-inner");
+
+  const setNavOpen = (open) => {
+    if (!shell || !navToggle) return;
+    shell.classList.toggle("vc-nav-open", open);
+    navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    navToggle.setAttribute("aria-label", open ? "Close navigation menu" : "Open navigation menu");
+  };
+
+  navToggle?.addEventListener("click", () => {
+    const expanded = navToggle.getAttribute("aria-expanded") === "true";
+    setNavOpen(!expanded);
   });
+
+  refs.detail.querySelectorAll("[data-back-library]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setNavOpen(false);
+      closeCookbook();
+    });
+  });
+
+  const navButtons = Array.from(refs.detail.querySelectorAll("[data-scroll-target]"));
+  navButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetId = button.dataset.scrollTarget || "";
+      scrollCookbookTarget(targetId);
+      if (window.matchMedia("(max-width: 959px)").matches) setNavOpen(false);
+    });
+  });
+
+  const targetMap = new Map(
+    navButtons
+      .map((button) => {
+        const targetId = button.dataset.scrollTarget || "";
+        return targetId ? [targetId, button] : null;
+      })
+      .filter(Boolean),
+  );
+
+  const setCurrentNav = (button) => {
+    if (!button) return;
+    navButtons.forEach((candidate) => candidate.removeAttribute("aria-current"));
+    button.setAttribute("aria-current", "true");
+  };
+  const setFirstNavAtTop = () => {
+    if (window.scrollY <= 6 && navButtons.length > 0) setCurrentNav(navButtons[0]);
+  };
+
+  let observer = null;
+  if ("IntersectionObserver" in window) {
+    observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const button = targetMap.get(entry.target.id);
+          if (button) setCurrentNav(button);
+        });
+      },
+      {
+        rootMargin: "-30% 0px -60% 0px",
+        threshold: [0, 1],
+      },
+    );
+
+    targetMap.forEach((_button, id) => {
+      const target = document.getElementById(id);
+      if (target) observer.observe(target);
+    });
+  }
+
+  const onScroll = () => {
+    if (!(state.tab === "cookbooks" && state.cookbookSlug)) return;
+    setFirstNavAtTop();
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  const onKeydown = (event) => {
+    if (event.key === "Escape") setNavOpen(false);
+  };
+  const onDocumentClick = (event) => {
+    if (!window.matchMedia("(max-width: 959px)").matches) return;
+    if (!navToggle || navToggle.getAttribute("aria-expanded") !== "true") return;
+    const target = event.target;
+    if (!(target instanceof Node)) return;
+    if (navToggle.contains(target)) return;
+    if (railInner && railInner.contains(target)) return;
+    setNavOpen(false);
+  };
+  document.addEventListener("keydown", onKeydown);
+  document.addEventListener("click", onDocumentClick);
+
+  hydrateMusicLinks(refs.detail);
+  syncCookbookHeaderHeight();
+  syncCookbookRailGeometry();
+  requestAnimationFrame(syncCookbookHeaderHeight);
+  requestAnimationFrame(syncCookbookRailGeometry);
+  setFirstNavAtTop();
+
+  disposeCookbookView = () => {
+    window.removeEventListener("scroll", onScroll);
+    if (observer) observer.disconnect();
+    document.removeEventListener("keydown", onKeydown);
+    document.removeEventListener("click", onDocumentClick);
+  };
 
   refs.detail.hidden = false;
   refs.detailEmpty.hidden = true;
@@ -454,22 +706,16 @@ const renderCookbookDetail = () => {
 };
 
 const runMorphAnimation = () => {
-  if (!pendingMorphRect) {
-    return;
-  }
+  if (!pendingMorphRect) return;
 
-  const target = document.getElementById("vc-detail-card");
+  const target = document.getElementById("vc-detail-surface");
   const startRect = pendingMorphRect;
   pendingMorphRect = null;
 
-  if (!target || reducedMotion) {
-    return;
-  }
+  if (!target || reducedMotion) return;
 
   const endRect = target.getBoundingClientRect();
-  if (startRect.width < 2 || startRect.height < 2 || endRect.width < 2 || endRect.height < 2) {
-    return;
-  }
+  if (startRect.width < 2 || startRect.height < 2 || endRect.width < 2 || endRect.height < 2) return;
 
   const overlay = document.createElement("div");
   overlay.className = "vc-morph-overlay";
@@ -478,47 +724,33 @@ const runMorphAnimation = () => {
   overlay.style.width = `${startRect.width}px`;
   overlay.style.height = `${startRect.height}px`;
   document.body.appendChild(overlay);
-
   target.style.visibility = "hidden";
 
   requestAnimationFrame(() => {
-    overlay.style.transition = "left 230ms cubic-bezier(0.2, 0, 0, 1), top 230ms cubic-bezier(0.2, 0, 0, 1), width 230ms cubic-bezier(0.2, 0, 0, 1), height 230ms cubic-bezier(0.2, 0, 0, 1), border-radius 230ms cubic-bezier(0.2, 0, 0, 1)";
+    overlay.style.transition = "left 260ms cubic-bezier(0.2, 0, 0, 1), top 260ms cubic-bezier(0.2, 0, 0, 1), width 260ms cubic-bezier(0.2, 0, 0, 1), height 260ms cubic-bezier(0.2, 0, 0, 1), border-radius 260ms cubic-bezier(0.2, 0, 0, 1)";
     overlay.style.left = `${endRect.left}px`;
     overlay.style.top = `${endRect.top}px`;
     overlay.style.width = `${endRect.width}px`;
     overlay.style.height = `${endRect.height}px`;
-    overlay.style.borderRadius = "22px";
+    overlay.style.borderRadius = "24px";
   });
 
-  overlay.addEventListener(
-    "transitionend",
-    () => {
-      target.style.visibility = "visible";
-      overlay.remove();
-    },
-    { once: true }
-  );
-};
-
-const renderDetail = () => {
-  if (state.tab === "recipes") {
-    renderRecipeDetail();
-    return;
-  }
-  renderCookbookDetail();
+  overlay.addEventListener("transitionend", () => {
+    target.style.visibility = "visible";
+    overlay.remove();
+  }, { once: true });
 };
 
 const render = () => {
+  if (!(state.tab === "cookbooks" && state.cookbookSlug)) clearCookbookBindings();
   renderTabs();
-
   refs.searchInput.value = state.q;
-  refs.searchInput.placeholder = state.tab === "recipes" ? "Search recipes" : "Search cookbooks";
+  refs.searchInput.placeholder = state.tab === "recipes" ? "Search in recipes" : "Search in cookbooks";
 
   renderFilters();
 
   if (state.tab === "recipes") {
     renderRecipesList();
-
     if (state.recipeSlug && !recipesBySlug.has(state.recipeSlug)) {
       state.recipeSlug = "";
       updateHash(true);
@@ -530,23 +762,20 @@ const render = () => {
       updateHash(true);
       return;
     }
-  } else {
-    renderCookbooksList();
 
-    if (state.cookbookSlug && !cookbooksBySlug.has(state.cookbookSlug)) {
-      state.cookbookSlug = "";
-      updateHash(true);
-      return;
-    }
-
-    if (!state.cookbookSlug && activeCookbookList.length > 0 && normalize(state.q) === "") {
-      state.cookbookSlug = activeCookbookList[0].slug;
-      updateHash(true);
-      return;
-    }
+    renderRecipeDetail();
+    return;
   }
 
-  renderDetail();
+  if (state.cookbookSlug) {
+    renderCookbookFullscreen();
+    return;
+  }
+
+  renderCookbooksList();
+  refs.detail.hidden = true;
+  refs.detailEmpty.hidden = false;
+  refs.detailEmpty.textContent = "Choose a cookbook to open full cookbook view.";
 };
 
 const setupEvents = () => {
@@ -555,23 +784,32 @@ const setupEvents = () => {
 
   refs.searchInput.addEventListener("input", (event) => {
     state.q = text(event.target.value);
-    if (state.tab === "recipes") {
-      state.recipeSlug = "";
-    } else {
-      state.cookbookSlug = "";
-    }
+    if (state.tab === "recipes") state.recipeSlug = "";
+    if (state.tab === "cookbooks") state.cookbookSlug = "";
     updateHash(true);
   });
 
+  window.addEventListener("resize", () => {
+    if (state.tab === "cookbooks" && state.cookbookSlug) {
+      syncCookbookHeaderHeight();
+      syncCookbookRailGeometry();
+      if (window.matchMedia("(min-width: 960px)").matches) {
+        refs.detail.querySelector(".vc-cookbook-shell")?.classList.remove("vc-nav-open");
+        const toggle = refs.detail.querySelector("[data-cookbook-nav-toggle]");
+        if (toggle) {
+          toggle.setAttribute("aria-expanded", "false");
+          toggle.setAttribute("aria-label", "Open navigation menu");
+        }
+      }
+    }
+  });
   window.addEventListener("hashchange", applyStateFromHash);
 };
 
 const bootstrap = async () => {
   try {
     const response = await fetch(DATA_PATH, { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${DATA_PATH}: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Failed to fetch ${DATA_PATH}: ${response.status}`);
     data = await response.json();
   } catch (error) {
     refs.list.innerHTML = `<div class="vc-empty">Unable to load cookbook content. ${error}</div>`;

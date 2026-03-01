@@ -6,7 +6,7 @@ vaultchef is a terminal-only cookbook builder that turns an Obsidian vault of Ma
 
 - Write recipes as plain `.md` notes in an Obsidian vault.
 - Curate a cookbook using a single “Cookbook note” with `![[...]]` embeds.
-- Run one command to generate a PDF or web-ready HTML.
+- Run one command to generate a PDF or a full web app bundle.
 - Never write generated files into the vault.
 
 ## Quick start (example vault)
@@ -33,6 +33,8 @@ Intermediate outputs land in `./build/`.
 - PDF output is copied to your current working directory as `<Cookbook>.pdf`.
 - Web output is copied to your current working directory as `./vaultchef-web/` with `index.html` and `content/index.json`.
 The web app is responsive for desktop and phone screens (including Pixel 8 Pro-class widths).
+Recipe images referenced via frontmatter are copied into `vaultchef-web/assets/images/` for portable hosting.
+If an image path is missing, the build warns and continues.
 
 ## CLI
 
