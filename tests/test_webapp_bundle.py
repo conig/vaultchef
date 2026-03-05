@@ -32,6 +32,8 @@ def test_webapp_script_includes_routes_and_morph() -> None:
     assert "vc-nav-open" in text
     assert "getFeaturedDateNightCookbook" in text
     assert "renderSidebarFeature" in text
+    assert "transitioncancel" in text
+    assert "clearMorphArtifacts" in text
 
 
 # Purpose: verify web app css preserves mobile tap target sizing.

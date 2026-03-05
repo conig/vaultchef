@@ -116,6 +116,9 @@ def _build_recipe_entries(recipe_sources: list[tuple[Path, dict[str, Any], str]]
         slug = _unique_slug(_slugify(slug_base), used_slugs)
 
         tags = normalize_tags(meta.get("tags"))
+        rating = _float_value(meta.get("rating"))
+        if rating is not None and rating > 85:
+            tags = _append_tag(tags, "highly rated")
         sections = _split_sections(body)
 
         ingredients_md = sections.get("ingredients", "")
@@ -157,6 +160,7 @@ def _build_recipe_entries(recipe_sources: list[tuple[Path, dict[str, Any], str]]
                 "cook": _string_value(meta.get("cook")) or "",
                 "rest": _string_value(meta.get("rest")) or "",
                 "difficulty": _int_value(meta.get("difficulty")),
+                "rating": rating,
                 "image": image_raw or "",
                 "image_alt": title,
                 "tags": sorted(tag for tag in tags if tag),
@@ -498,6 +502,27 @@ def _int_value(value: Any) -> int | None:
         return int(str(value).strip())
     except (TypeError, ValueError):
         return None
+
+
+def _float_value(value: Any) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        return float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _append_tag(tags: list[str], tag: str) -> list[str]:
+    normalized = tag.strip()
+    if not normalized:
+        return tags
+    existing = {str(item).strip().casefold() for item in tags}
+    if normalized.casefold() in existing:
+        return tags
+    return [*tags, normalized]
 
 
 def _coerce_bool(value: Any) -> bool:

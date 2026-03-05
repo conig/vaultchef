@@ -1,4 +1,4 @@
-const DATA_PATH = "./content/index.json";
+const DATA_URL = new URL("./content/index.json", import.meta.url);
 
 const FLAG_LABELS = {
   vegetarian: "Vegetarian",
@@ -49,6 +49,91 @@ const slugify = (value) =>
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "") || "section";
+const iconClipboard = `
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <rect x="7" y="5" width="10" height="15" rx="2" ry="2"></rect>
+    <path d="M9 5.5h6M10 3.5h4"></path>
+  </svg>
+`;
+const iconShare = `
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M12 15V5"></path>
+    <path d="M9 8l3-3 3 3"></path>
+    <path d="M6 13.5h12a2 2 0 0 1 2 2V19H4v-3.5a2 2 0 0 1 2-2z"></path>
+  </svg>
+`;
+
+const stripHtmlToText = (html) => {
+  const value = text(html);
+  if (!value) return "";
+  const doc = new DOMParser().parseFromString(`<body>${value}</body>`, "text/html");
+  return text(doc.body.textContent).replace(/\u00a0/g, " ");
+};
+
+const buildRecipeMarkdown = (recipe) => {
+  const lines = [`# ${text(recipe.title)}`];
+
+  if (text(recipe.menu)) {
+    lines.push("", text(recipe.menu));
+  }
+
+  lines.push("", "## Ingredients");
+  const ingredients = Array.isArray(recipe.ingredients_items) ? recipe.ingredients_items : [];
+  if (ingredients.length > 0) {
+    ingredients.forEach((item) => lines.push(`- ${text(item)}`));
+  } else {
+    lines.push("- (No ingredients provided)");
+  }
+
+  lines.push("", "## Method");
+  const method = Array.isArray(recipe.method_items) ? recipe.method_items : [];
+  if (method.length > 0) {
+    method.forEach((step, idx) => lines.push(`${idx + 1}. ${text(step)}`));
+  } else {
+    lines.push("1. (No method provided)");
+  }
+
+  const notes = stripHtmlToText(recipe.sections?.notes_html || "");
+  if (notes) {
+    lines.push("", "## Notes", "", notes);
+  }
+
+  return `${lines.join("\n").trim()}\n`;
+};
+
+const canonicalRecipeUrl = (slug) => {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = `/recipes/${encodeURIComponent(text(slug))}`;
+  return url.toString();
+};
+
+const writeClipboardText = async (value) => {
+  const content = String(value || "");
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    await navigator.clipboard.writeText(content);
+    return true;
+  }
+
+  const area = document.createElement("textarea");
+  area.value = content;
+  area.setAttribute("readonly", "readonly");
+  area.style.position = "fixed";
+  area.style.top = "-9999px";
+  document.body.appendChild(area);
+  area.focus();
+  area.select();
+  const success = document.execCommand("copy");
+  area.remove();
+  if (!success) throw new Error("Clipboard write failed.");
+  return true;
+};
+
+const pulseActionButton = (button) => {
+  if (!(button instanceof HTMLElement)) return;
+  button.classList.add("is-confirmed");
+  window.setTimeout(() => button.classList.remove("is-confirmed"), 800);
+};
 
 const toYouTubeMusicUrl = (raw) => {
   if (!raw) return null;
@@ -139,7 +224,12 @@ const parseHash = () => {
   const path = pathRaw.replace(/^\/+/, "");
   const parts = path.split("/").filter(Boolean);
   const tab = parts[0] === "cookbooks" ? "cookbooks" : "recipes";
-  const slug = decodeURIComponent(parts[1] || "");
+  let slug = "";
+  try {
+    slug = decodeURIComponent(parts[1] || "");
+  } catch (_error) {
+    slug = text(parts[1] || "");
+  }
 
   const params = new URLSearchParams(queryRaw || "");
   const flags = new Set(text(params.get("flags")).split(",").map((item) => item.trim()).filter(Boolean));
@@ -243,11 +333,15 @@ const openCookbook = (slug, sourceCard = null) => {
 
 const closeRecipe = () => {
   if (!state.recipeSlug) return;
+  clearMorphArtifacts();
+  pendingMorphRect = null;
   state.recipeSlug = "";
   updateHash();
 };
 
 const closeCookbook = () => {
+  clearMorphArtifacts();
+  pendingMorphRect = null;
   state.cookbookSlug = "";
   updateHash();
 };
@@ -521,7 +615,15 @@ const renderRecipeDetail = () => {
           <h2>${escapeHtml(recipe.title)}</h2>
           ${recipe.menu ? `<p class="vc-lede">${escapeHtml(recipe.menu)}</p>` : ""}
         </div>
-        <button class="vc-close-btn" type="button" data-close-recipe aria-label="Close recipe">Close</button>
+        <div class="vc-modal-actions">
+          <button class="vc-icon-btn vc-icon-btn-plain" type="button" data-copy-recipe aria-label="Copy recipe markdown" title="Copy recipe markdown">
+            ${iconClipboard}
+          </button>
+          <button class="vc-icon-btn vc-icon-btn-plain" type="button" data-share-recipe aria-label="Share recipe link" title="Share recipe link">
+            ${iconShare}
+          </button>
+          <button class="vc-icon-btn vc-close-btn" type="button" data-close-recipe aria-label="Close recipe" title="Close recipe">&times;</button>
+        </div>
       </header>
       ${renderRecipeHero(recipe)}
       <div class="vc-meta-row">
@@ -547,6 +649,29 @@ const renderRecipeDetail = () => {
 
   refs.detail.querySelectorAll("[data-cookbook-jump]").forEach((button) => {
     button.addEventListener("click", () => openCookbook(button.dataset.cookbookJump || ""));
+  });
+  refs.detail.querySelector("[data-copy-recipe]")?.addEventListener("click", async (event) => {
+    const trigger = event.currentTarget;
+    try {
+      await writeClipboardText(buildRecipeMarkdown(recipe));
+      pulseActionButton(trigger);
+    } catch (_error) {
+      // Ignore clipboard failures silently in UI; keyboard shortcuts can still be used.
+    }
+  });
+  refs.detail.querySelector("[data-share-recipe]")?.addEventListener("click", async (event) => {
+    const trigger = event.currentTarget;
+    const shareUrl = canonicalRecipeUrl(recipe.slug);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: recipe.title || "Recipe", url: shareUrl });
+      } else {
+        await writeClipboardText(shareUrl);
+      }
+      pulseActionButton(trigger);
+    } catch (_error) {
+      // Ignore cancelled/failed share interactions.
+    }
   });
   refs.detail.querySelector("[data-close-recipe]")?.addEventListener("click", closeRecipe);
 
@@ -628,7 +753,17 @@ const renderCookbookFullscreen = () => {
             cookbook.album_youtube_url
               ? `
             <p class="vc-music-links">
-              <a class="vc-music-link" data-vc-music-url="${escapeHtml(cookbook.album_youtube_url)}" href="${escapeHtml(cookbook.album_youtube_url)}" target="_blank" rel="noopener noreferrer">Play on YouTube Music</a>
+              <a
+                class="vc-music-link"
+                data-vc-music-url="${escapeHtml(cookbook.album_youtube_url)}"
+                href="${escapeHtml(cookbook.album_youtube_url)}"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Play on YouTube Music"
+                title="Play on YouTube Music"
+              >
+                <span class="vc-music-link-label">Play on YouTube Music</span>
+              </a>
             </p>
           `
               : ""
@@ -669,7 +804,7 @@ const renderCookbookFullscreen = () => {
         <aside class="vc-cookbook-rail" aria-label="Cookbook navigation">
           <div class="vc-cookbook-rail-inner" id="vc-cookbook-menu">
             <div class="vc-cookbook-menu-actions">
-              <button class="vc-back-btn vc-back-btn-menu" type="button" data-back-library>Back to cookbooks</button>
+              <button class="vc-back-btn vc-back-btn-menu" type="button" data-back-library aria-label="Back to cookbooks" title="Back to cookbooks">&larr;</button>
             </div>
             <section class="vc-nav-panel vc-nav-panel-inline">
               <h2 class="vc-nav-title">Contents</h2>
@@ -810,6 +945,14 @@ const runMorphAnimation = () => {
 
   const endRect = target.getBoundingClientRect();
   if (startRect.width < 2 || startRect.height < 2 || endRect.width < 2 || endRect.height < 2) return;
+  if (
+    Math.abs(startRect.left - endRect.left) < 1 &&
+    Math.abs(startRect.top - endRect.top) < 1 &&
+    Math.abs(startRect.width - endRect.width) < 1 &&
+    Math.abs(startRect.height - endRect.height) < 1
+  ) {
+    return;
+  }
 
   const overlay = document.createElement("div");
   overlay.className = "vc-morph-overlay";
@@ -820,6 +963,29 @@ const runMorphAnimation = () => {
   document.body.appendChild(overlay);
   target.style.visibility = "hidden";
 
+  const finishMorph = () => {
+    target.style.visibility = "visible";
+    overlay.remove();
+  };
+
+  const timer = window.setTimeout(finishMorph, 420);
+  overlay.addEventListener(
+    "transitionend",
+    () => {
+      window.clearTimeout(timer);
+      finishMorph();
+    },
+    { once: true },
+  );
+  overlay.addEventListener(
+    "transitioncancel",
+    () => {
+      window.clearTimeout(timer);
+      finishMorph();
+    },
+    { once: true },
+  );
+
   requestAnimationFrame(() => {
     overlay.style.transition = "left 260ms cubic-bezier(0.2, 0, 0, 1), top 260ms cubic-bezier(0.2, 0, 0, 1), width 260ms cubic-bezier(0.2, 0, 0, 1), height 260ms cubic-bezier(0.2, 0, 0, 1), border-radius 260ms cubic-bezier(0.2, 0, 0, 1)";
     overlay.style.left = `${endRect.left}px`;
@@ -828,14 +994,16 @@ const runMorphAnimation = () => {
     overlay.style.height = `${endRect.height}px`;
     overlay.style.borderRadius = "24px";
   });
+};
 
-  overlay.addEventListener("transitionend", () => {
-    target.style.visibility = "visible";
-    overlay.remove();
-  }, { once: true });
+const clearMorphArtifacts = () => {
+  document.querySelectorAll(".vc-morph-overlay").forEach((node) => node.remove());
+  const detailSurface = refs.detail.querySelector("#vc-detail-surface");
+  if (detailSurface instanceof HTMLElement) detailSurface.style.visibility = "visible";
 };
 
 const render = () => {
+  clearMorphArtifacts();
   if (!(state.tab === "cookbooks" && state.cookbookSlug)) clearCookbookBindings();
   renderTabs();
   refs.searchInput.value = state.q;
@@ -903,8 +1071,8 @@ const setupEvents = () => {
 
 const bootstrap = async () => {
   try {
-    const response = await fetch(DATA_PATH, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Failed to fetch ${DATA_PATH}: ${response.status}`);
+    const response = await fetch(DATA_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Failed to fetch ${DATA_URL}: ${response.status}`);
     data = await response.json();
   } catch (error) {
     refs.list.innerHTML = `<div class="vc-empty">Unable to load cookbook content. ${error}</div>`;

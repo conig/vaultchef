@@ -5,11 +5,13 @@ from pathlib import Path
 from vaultchef.services.web_service import (
     _build_cookbook_entries,
     _build_recipe_entries,
+    _append_tag,
     _coerce_bool,
     _collect_recipe_sources,
     _copy_recipe_images,
     _dedupe_ordered,
     _extract_cookbook_reader_blocks,
+    _float_value,
     _image_meta_value,
     _int_value,
     _simple_markdown_to_html,
@@ -216,6 +218,11 @@ def test_web_service_helpers() -> None:
     assert _int_value(3) == 3
     assert _int_value("7") == 7
     assert _int_value("nope") is None
+    assert _float_value(3) == 3.0
+    assert _float_value("7.5") == 7.5
+    assert _float_value("nope") is None
+    assert _append_tag(["quick"], "highly rated") == ["quick", "highly rated"]
+    assert _append_tag(["HighLy Rated"], "highly rated") == ["HighLy Rated"]
 
     assert _coerce_bool(1) is True
     assert _coerce_bool("yes") is True
@@ -225,3 +232,34 @@ def test_web_service_helpers() -> None:
     assert _dedupe_ordered(["a", "b", "a", "c"]) == ["a", "b", "c"]
     assert _image_meta_value([]) is None
     assert _image_meta_value([" first.jpg "]) == "first.jpg"
+
+
+# Purpose: verify web recipe tags include highly rated when rating > 85.
+def test_build_recipe_entries_adds_highly_rated_tag(tmp_path: Path) -> None:
+    vault_root = tmp_path / "Vault"
+    recipes_dir = vault_root / "Recipes"
+    recipes_dir.mkdir(parents=True)
+
+    high = recipes_dir / "High.md"
+    high.write_text("---\ntitle: High\nrecipe_id: 1\nrating: 86\ntags: [quick]\n---\n\n## Ingredients\n- a\n\n## Method\n1. b\n", encoding="utf-8")
+    low = recipes_dir / "Low.md"
+    low.write_text("---\ntitle: Low\nrecipe_id: 2\nrating: 85\ntags: [quick]\n---\n\n## Ingredients\n- a\n\n## Method\n1. b\n", encoding="utf-8")
+
+    recipe_sources = [
+        (
+            high.resolve(),
+            {"title": "High", "recipe_id": 1, "rating": 86, "tags": ["quick"]},
+            "## Ingredients\n- a\n\n## Method\n1. b\n",
+        ),
+        (
+            low.resolve(),
+            {"title": "Low", "recipe_id": 2, "rating": 85, "tags": ["quick"]},
+            "## Ingredients\n- a\n\n## Method\n1. b\n",
+        ),
+    ]
+
+    recipes = _build_recipe_entries(recipe_sources, vault_root)
+    by_title = {item["title"]: item for item in recipes}
+
+    assert "highly rated" in by_title["High"]["tags"]
+    assert "highly rated" not in by_title["Low"]["tags"]

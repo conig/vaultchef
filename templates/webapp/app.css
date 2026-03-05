@@ -692,16 +692,58 @@ img {
   gap: 8px;
 }
 
+.vc-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vc-icon-btn {
+  border: 0;
+  border-radius: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  width: 44px;
+  padding: 0;
+  background: transparent;
+  color: var(--vc-ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.vc-icon-btn svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.vc-icon-btn:hover {
+  background: color-mix(in srgb, var(--vc-surface-soft) 75%, #fff 25%);
+}
+
+.vc-icon-btn:active {
+  transform: scale(0.97);
+}
+
+.vc-icon-btn.is-confirmed {
+  color: #136f3a;
+  background: color-mix(in srgb, var(--vc-gold-soft) 30%, #fff 70%);
+}
+
 .vc-close-btn {
   border: 1px solid var(--vc-border);
   border-radius: 999px;
-  min-height: 44px;
-  padding: 0 14px;
   background: var(--vc-surface-soft);
-  color: var(--vc-ink);
-  font: inherit;
+  font-size: 1.28rem;
+  line-height: 1;
   font-weight: 700;
-  cursor: pointer;
 }
 
 @media (min-width: 980px) {
@@ -1042,26 +1084,54 @@ img {
 
 .vc-music-links {
   margin: 10px 0 0;
+  display: flex;
+  align-items: center;
 }
 
 .vc-music-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 44px;
-  border-radius: 8px;
+  min-width: 44px;
+  width: 44px;
+  border-radius: 999px;
   border: 1px solid var(--vc-border);
   background: var(--vc-surface-soft);
   color: #5a321e;
   text-decoration: none;
-  font-weight: 700;
-  padding: 6px 11px;
+  padding: 0;
+  transition: background-color 120ms ease, transform 120ms ease, color 120ms ease;
+}
+
+.vc-music-link:hover,
+.vc-music-link:focus-visible {
+  background: #f4dfc8;
+  color: #3f2215;
+  outline: none;
+}
+
+.vc-music-link:active {
+  transform: scale(0.97);
 }
 
 .vc-music-link::before {
   content: "▶";
-  margin-right: 0.45em;
-  font-size: 0.84em;
+  margin-left: 2px;
+  font-size: 0.9em;
   line-height: 1;
+}
+
+.vc-music-link-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .vc-cookbook-content {
