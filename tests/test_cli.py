@@ -316,6 +316,7 @@ def test_cli_build_web_creates_bundle(example_vault: Path, tmp_path: Path, temp_
     assert rc == 0
     assert (tmp_path / "build" / "vaultchef-web" / "index.html").exists()
     assert (cwd / "vaultchef-web" / "index.html").exists()
+    assert (cwd / "vaultchef-web" / "interaction.mjs").exists()
     assert (cwd / "vaultchef-web" / "content" / "index.json").exists()
 
 

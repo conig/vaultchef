@@ -77,6 +77,7 @@ def test_build_writes_web_library_bundle(tmp_path: Path, example_vault: Path, te
     assert build_index.exists()
     assert final_index.exists()
     assert (cwd / "vaultchef-web" / "index.html").exists()
+    assert (cwd / "vaultchef-web" / "interaction.mjs").exists()
     payload = json.loads(final_index.read_text(encoding="utf-8"))
     assert payload["version"] == 1
     assert len(payload["recipes"]) >= 1

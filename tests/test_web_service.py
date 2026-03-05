@@ -221,6 +221,7 @@ def test_web_service_helpers() -> None:
     assert _float_value(3) == 3.0
     assert _float_value("7.5") == 7.5
     assert _float_value("nope") is None
+    assert _append_tag(["quick"], "   ") == ["quick"]
     assert _append_tag(["quick"], "highly rated") == ["quick", "highly rated"]
     assert _append_tag(["HighLy Rated"], "highly rated") == ["HighLy Rated"]
 
