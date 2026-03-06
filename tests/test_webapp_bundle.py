@@ -40,6 +40,13 @@ def test_webapp_script_includes_routes_and_morph() -> None:
     assert "clearMorphArtifacts" in text
     assert "vc-mode-recipe-reader" in text
     assert "data-recipe-layout" in text
+    assert "hydrateImageFallbacks" in text
+    assert "measureImageFocus" in text
+    assert "refreshImageFocus" in text
+    assert "data-vc-image-frame" in text
+    assert "vc-image-fallback" in text
+    assert "vc-recipe-visual-column" in text
+    assert "vc-section-panel" in text
 
 
 # Purpose: verify web app css preserves mobile tap target sizing.
@@ -55,6 +62,12 @@ def test_webapp_css_tap_targets() -> None:
     assert ".vc-feature-card" in text
     assert ".vc-mode-recipe-reader" in text
     assert ".vc-detail-back-btn" in text
+    assert ".vc-image-fallback" in text
+    assert ".vc-hero-placeholder" in text
+    assert "--vc-image-scale" in text
+    assert "will-change: transform" in text
+    assert ".vc-recipe-visual-column" in text
+    assert ".vc-section-panel" in text
 
 
 # Purpose: verify pure interaction helpers classify taps vs scroll gestures correctly.

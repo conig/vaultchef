@@ -391,6 +391,209 @@ const buildMetaPills = (values) => {
   return row;
 };
 
+const imageInitials = (value) => {
+  const words = text(value)
+    .split(/\s+/)
+    .map((item) => item.replace(/[^a-z0-9]/gi, ""))
+    .filter(Boolean);
+  if (words.length === 0) return "VC";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return `${words[0][0] || ""}${words[1][0] || ""}`.toUpperCase();
+};
+
+const buildImageFallbackMarkup = ({ title, label = "", kind = "card" }) => `
+  <span class="vc-image-fallback vc-image-fallback-${kind}" aria-hidden="true">
+    <span class="vc-image-fallback-mark">${escapeHtml(imageInitials(title))}</span>
+    ${label ? `<span class="vc-image-fallback-label">${escapeHtml(label)}</span>` : ""}
+  </span>
+`;
+
+const buildImageMarkup = ({ src, alt = "", title = "", label = "", kind = "card" }) =>
+  `${buildImageFallbackMarkup({ title, label, kind })}<img data-vc-image src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />`;
+
+const clearImageFocus = (frame) => {
+  if (!(frame instanceof HTMLElement)) return;
+  frame.style.removeProperty("--vc-image-scale");
+  frame.style.removeProperty("--vc-image-shift-x");
+  frame.style.removeProperty("--vc-image-shift-y");
+  frame.dataset.vcImageFocus = "none";
+};
+
+const measureImageFocus = (img) => {
+  if (!(img instanceof HTMLImageElement) || img.naturalWidth <= 0 || img.naturalHeight <= 0) return null;
+
+  const sampleWidth = Math.min(img.naturalWidth, 128);
+  const sampleHeight = Math.max(1, Math.round((img.naturalHeight / img.naturalWidth) * sampleWidth));
+  const canvas = document.createElement("canvas");
+  canvas.width = sampleWidth;
+  canvas.height = sampleHeight;
+
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return null;
+
+  context.drawImage(img, 0, 0, sampleWidth, sampleHeight);
+  const pixels = context.getImageData(0, 0, sampleWidth, sampleHeight).data;
+  const cornerSize = Math.max(4, Math.floor(Math.min(sampleWidth, sampleHeight) * 0.12));
+  const cornerOffsets = [
+    [0, 0],
+    [sampleWidth - cornerSize, 0],
+    [0, sampleHeight - cornerSize],
+    [sampleWidth - cornerSize, sampleHeight - cornerSize],
+  ];
+
+  let cornerCount = 0;
+  let sumR = 0;
+  let sumG = 0;
+  let sumB = 0;
+  let sumA = 0;
+
+  cornerOffsets.forEach(([startX, startY]) => {
+    for (let y = startY; y < startY + cornerSize; y += 1) {
+      for (let x = startX; x < startX + cornerSize; x += 1) {
+        const index = (y * sampleWidth + x) * 4;
+        sumR += pixels[index];
+        sumG += pixels[index + 1];
+        sumB += pixels[index + 2];
+        sumA += pixels[index + 3];
+        cornerCount += 1;
+      }
+    }
+  });
+
+  if (cornerCount === 0) return null;
+
+  const bgR = sumR / cornerCount;
+  const bgG = sumG / cornerCount;
+  const bgB = sumB / cornerCount;
+  const bgA = sumA / cornerCount;
+  const bgLuma = (bgR + bgG + bgB) / 3;
+
+  let variance = 0;
+  cornerOffsets.forEach(([startX, startY]) => {
+    for (let y = startY; y < startY + cornerSize; y += 1) {
+      for (let x = startX; x < startX + cornerSize; x += 1) {
+        const index = (y * sampleWidth + x) * 4;
+        variance += Math.abs(pixels[index] - bgR);
+        variance += Math.abs(pixels[index + 1] - bgG);
+        variance += Math.abs(pixels[index + 2] - bgB);
+      }
+    }
+  });
+  const averageVariance = variance / Math.max(1, cornerCount * 3);
+  const lightUniformBackground = bgA >= 235 && bgLuma >= 232 && averageVariance <= 18;
+  if (!lightUniformBackground) return null;
+
+  let weightedCount = 0;
+  let sumX = 0;
+  let sumY = 0;
+  let minX = sampleWidth;
+  let maxX = -1;
+  let minY = sampleHeight;
+  let maxY = -1;
+
+  for (let y = 0; y < sampleHeight; y += 1) {
+    for (let x = 0; x < sampleWidth; x += 1) {
+      const index = (y * sampleWidth + x) * 4;
+      const alpha = pixels[index + 3];
+      if (alpha < 16) continue;
+
+      const r = pixels[index];
+      const g = pixels[index + 1];
+      const b = pixels[index + 2];
+      const luma = (r + g + b) / 3;
+      const distance = (Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB)) / 3;
+      const weight = Math.max(bgLuma - luma, distance * 1.2);
+      if (weight < 18) continue;
+
+      weightedCount += weight;
+      sumX += x * weight;
+      sumY += y * weight;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+
+  if (weightedCount <= 0 || maxX < minX || maxY < minY) return null;
+
+  const centerX = sumX / weightedCount;
+  const centerY = sumY / weightedCount;
+  const offsetX = centerX / sampleWidth - 0.5;
+  const offsetY = centerY / sampleHeight - 0.5;
+  const fill = Math.max((maxX - minX + 1) / sampleWidth, (maxY - minY + 1) / sampleHeight);
+
+  if (Math.abs(offsetX) < 0.012 && Math.abs(offsetY) < 0.016 && fill >= 0.9) return null;
+
+  return { offsetX, offsetY, fill };
+};
+
+const applyImageFocus = (frame, img) => {
+  if (!(frame instanceof HTMLElement) || !(img instanceof HTMLImageElement)) return;
+  if (!window.matchMedia("(min-width: 960px)").matches) {
+    clearImageFocus(frame);
+    return;
+  }
+
+  const focus = measureImageFocus(img);
+  if (!focus) {
+    clearImageFocus(frame);
+    return;
+  }
+
+  const shiftX = Math.max(-6, Math.min(6, -focus.offsetX * 95));
+  const shiftY = Math.max(-8, Math.min(6, -focus.offsetY * 105));
+  const scale = Math.max(1, Math.min(1.12, 1 + Math.max(0, 0.9 - focus.fill) * 0.22 + Math.hypot(shiftX, shiftY) * 0.004));
+
+  frame.style.setProperty("--vc-image-shift-x", `${shiftX.toFixed(2)}%`);
+  frame.style.setProperty("--vc-image-shift-y", `${shiftY.toFixed(2)}%`);
+  frame.style.setProperty("--vc-image-scale", scale.toFixed(3));
+  frame.dataset.vcImageFocus = "auto";
+};
+
+const refreshImageFocus = (root = document) => {
+  if (!root || typeof root.querySelectorAll !== "function") return;
+  root.querySelectorAll("[data-vc-image-frame]").forEach((frame) => {
+    if (!(frame instanceof HTMLElement)) return;
+    const img = frame.querySelector("[data-vc-image]");
+    if (!(img instanceof HTMLImageElement) || img.naturalWidth <= 0) {
+      clearImageFocus(frame);
+      return;
+    }
+    applyImageFocus(frame, img);
+  });
+};
+
+const hydrateImageFallbacks = (root) => {
+  if (!root) return;
+  root.querySelectorAll("[data-vc-image-frame]").forEach((frame) => {
+    if (!(frame instanceof HTMLElement)) return;
+    const img = frame.querySelector("[data-vc-image]");
+    if (!(img instanceof HTMLImageElement)) return;
+
+    const markLoaded = () => {
+      frame.classList.remove("is-loading", "is-broken");
+      frame.classList.add("is-loaded");
+      applyImageFocus(frame, img);
+    };
+    const markBroken = () => {
+      frame.classList.remove("is-loading", "is-loaded");
+      frame.classList.add("is-broken");
+      clearImageFocus(frame);
+    };
+
+    frame.classList.add("is-loading");
+    if (img.complete) {
+      if (img.naturalWidth > 0) markLoaded();
+      else markBroken();
+      return;
+    }
+
+    img.addEventListener("load", markLoaded, { once: true });
+    img.addEventListener("error", markBroken, { once: true });
+  });
+};
+
 const buildCookbookCollageHtml = (cookbook) => {
   const candidates = (cookbook.recipe_slugs || [])
     .map((slug) => recipesBySlug.get(slug))
@@ -403,8 +606,8 @@ const buildCookbookCollageHtml = (cookbook) => {
   const cells = Array.from({ length: 4 }, (_value, idx) => {
     const src = candidates[idx] || "";
     return src
-      ? `<span class="vc-collage-cell"><img src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" /></span>`
-      : `<span class="vc-collage-cell vc-collage-cell-empty" aria-hidden="true"></span>`;
+      ? `<span class="vc-collage-cell" data-vc-image-frame>${buildImageMarkup({ src, title: cookbook.title, label: "Cookbook", kind: "collage" })}</span>`
+      : `<span class="vc-collage-cell vc-collage-cell-empty" aria-hidden="true">${buildImageFallbackMarkup({ title: cookbook.title, label: "Cookbook", kind: "collage" })}</span>`;
   }).join("");
   return `<div class="vc-cookbook-collage" aria-hidden="true">${cells}</div>`;
 };
@@ -507,7 +710,12 @@ const makeCard = ({ title, body, pills, image, heroHtml, heroClass, onOpen }) =>
   if (heroHtml || image) {
     const figure = document.createElement("figure");
     figure.className = `vc-card-hero ${heroClass || ""}`.trim();
-    figure.innerHTML = heroHtml || `<img src="${escapeHtml(image)}" alt="" loading="lazy" decoding="async" />`;
+    if (heroHtml) {
+      figure.innerHTML = heroHtml;
+    } else {
+      figure.setAttribute("data-vc-image-frame", "");
+      figure.innerHTML = buildImageMarkup({ src: image, title, alt: "", label: "Recipe", kind: "card" });
+    }
     card.appendChild(figure);
   }
 
@@ -584,6 +792,7 @@ const renderSidebarFeature = () => {
 
   refs.featureSlot.appendChild(card);
   refs.featureSlot.hidden = false;
+  hydrateImageFallbacks(refs.featureSlot);
 };
 
 const renderFilters = () => {
@@ -649,6 +858,7 @@ const renderRecipesList = () => {
     });
     refs.list.appendChild(card);
   });
+  hydrateImageFallbacks(refs.list);
 };
 
 const renderCookbooksList = () => {
@@ -679,12 +889,15 @@ const renderCookbooksList = () => {
     });
     refs.list.appendChild(card);
   });
+  hydrateImageFallbacks(refs.list);
 };
 
 const renderRecipeHero = (recipe) => {
-  if (!recipe.image) return "";
-  const alt = escapeHtml(recipe.image_alt || recipe.title || "Recipe image");
-  return `<figure class="vc-hero"><img src="${escapeHtml(recipe.image)}" alt="${alt}" loading="lazy" decoding="async" /></figure>`;
+  const alt = recipe.image_alt || recipe.title || "Recipe image";
+  if (!recipe.image) {
+    return `<figure class="vc-hero vc-hero-placeholder">${buildImageFallbackMarkup({ title: recipe.title, label: recipe.course || "Recipe", kind: "detail" })}</figure>`;
+  }
+  return `<figure class="vc-hero" data-vc-image-frame>${buildImageMarkup({ src: recipe.image, alt, title: recipe.title, label: recipe.course || "Recipe", kind: "detail" })}</figure>`;
 };
 
 const cookbookLinksHtml = (slugs) =>
@@ -778,6 +991,7 @@ const renderRecipeDetail = () => {
 
   refs.detail.hidden = false;
   refs.detailEmpty.hidden = true;
+  hydrateImageFallbacks(refs.detail);
   if (mobileReader) {
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "auto" });
@@ -791,21 +1005,27 @@ const renderCookbookRecipeCard = (recipe) => {
   return `
     <article class="vc-recipe-card" id="recipe-${escapeHtml(recipe.slug)}">
       <div class="vc-recipe-shell">
-        <div class="vc-recipe-col vc-col-left">
-          <h2 class="vc-recipe-title">${escapeHtml(recipe.title)}</h2>
-          ${recipe.menu ? `<p class="vc-recipe-intro">${escapeHtml(recipe.menu)}</p>` : ""}
-          ${renderRecipeHero(recipe)}
-          <section class="vc-section vc-section-ingredients">
-            <h2 class="vc-ingredients-heading">Ingredients</h2>
-            ${recipe.sections.ingredients_html || "<p>No ingredients section found.</p>"}
-          </section>
-        </div>
-        <div class="vc-recipe-col vc-col-right">
-          <section class="vc-section vc-section-method">
-            <h2 class="vc-method-heading">Method</h2>
-            ${recipe.sections.method_html || "<p>No method section found.</p>"}
-          </section>
-          ${recipe.sections.notes_html ? `<section class="vc-section vc-section-notes"><h2 class="vc-notes-heading">Notes</h2>${recipe.sections.notes_html}</section>` : ""}
+        <div class="vc-recipe-body">
+          <div class="vc-recipe-visual-column">
+            <header class="vc-recipe-head">
+              <h2 class="vc-recipe-title">${escapeHtml(recipe.title)}</h2>
+              ${recipe.menu ? `<p class="vc-recipe-intro">${escapeHtml(recipe.menu)}</p>` : ""}
+            </header>
+            <figure class="vc-recipe-visual">
+              ${renderRecipeHero(recipe)}
+            </figure>
+          </div>
+          <div class="vc-recipe-prose">
+            <section class="vc-section vc-section-panel vc-section-ingredients">
+              <h2 class="vc-ingredients-heading">Ingredients</h2>
+              ${recipe.sections.ingredients_html || "<p>No ingredients section found.</p>"}
+            </section>
+            <section class="vc-section vc-section-panel vc-section-method">
+              <h2 class="vc-method-heading">Method</h2>
+              ${recipe.sections.method_html || "<p>No method section found.</p>"}
+            </section>
+            ${recipe.sections.notes_html ? `<section class="vc-section vc-section-panel vc-section-notes"><h2 class="vc-notes-heading">Notes</h2>${recipe.sections.notes_html}</section>` : ""}
+          </div>
         </div>
       </div>
     </article>
@@ -1027,6 +1247,7 @@ const renderCookbookFullscreen = () => {
   document.addEventListener("click", onDocumentClick);
 
   hydrateMusicLinks(refs.detail);
+  hydrateImageFallbacks(refs.detail);
   syncCookbookHeaderHeight();
   syncCookbookRailGeometry();
   requestAnimationFrame(syncCookbookHeaderHeight);
@@ -1160,6 +1381,8 @@ const setupEvents = () => {
   });
 
   window.addEventListener("resize", () => {
+    refreshImageFocus(refs.list);
+    refreshImageFocus(refs.detail);
     if (state.tab === "recipes" && state.recipeSlug) render();
     if (state.tab === "cookbooks" && state.cookbookSlug) {
       syncCookbookHeaderHeight();

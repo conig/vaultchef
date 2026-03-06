@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-03-01T22:29:12.247776+00:00",
+  "generated_at": "2026-03-06T00:22:05.457250+00:00",
   "recipes": [
     {
       "id": "301",
@@ -16,6 +16,7 @@
       "cook": "",
       "rest": "",
       "difficulty": 1,
+      "rating": null,
       "image": "assets/images/301-berry-sparkler-mocktail-c0aca7a2.png",
       "image_alt": "Berry Sparkler Mocktail",
       "tags": [
@@ -68,6 +69,7 @@
       "cook": "",
       "rest": "",
       "difficulty": 1,
+      "rating": 79.0,
       "image": "assets/images/302-caprese-salad-5e42c93f.png",
       "image_alt": "Caprese Salad with Balsamic Glaze",
       "tags": [
@@ -121,6 +123,7 @@
       "cook": "",
       "rest": "10m",
       "difficulty": 1,
+      "rating": 76.0,
       "image": "assets/images/304-chocolate-dipped-strawberries-8fd58fc4.jpg",
       "image_alt": "Chocolate-Dipped Strawberries with Chantilly Cream",
       "tags": [
@@ -173,6 +176,7 @@
       "cook": "14m",
       "rest": "5m",
       "difficulty": 1,
+      "rating": null,
       "image": "assets/images/417-coconut-sago-lime-glossed-pineapple-740a8d13.png",
       "image_alt": "Coconut Sago with Lime-Glossed Pineapple",
       "tags": [
@@ -232,6 +236,7 @@
       "cook": "15m",
       "rest": "",
       "difficulty": 2,
+      "rating": 73.0,
       "image": "assets/images/303-creamy-garlic-prawn-pasta-5c6c1eb2.png",
       "image_alt": "Creamy Garlic Prawn Pasta",
       "tags": [
@@ -289,6 +294,7 @@
       "cook": "25m",
       "rest": "",
       "difficulty": 2,
+      "rating": 74.0,
       "image": "assets/images/402-crispy-chicken-with-lemon-caper-butter-parmesan-polenta-garlicky-greens-0f7a201d.png",
       "image_alt": "Crispy Chicken with Lemon-Caper Butter, Parmesan Polenta & Garlicky Greens",
       "tags": [
@@ -350,10 +356,12 @@
       "cook": "8m",
       "rest": "0m",
       "difficulty": 1,
+      "rating": 86.0,
       "image": "assets/images/306-crispy-halloumi-with-hot-honey-mint-and-pistachio-166a64ce.png",
       "image_alt": "Crispy Halloumi with Hot Honey, Mint & Pistachio",
       "tags": [
         "halloumi",
+        "highly rated",
         "pistachio",
         "quick",
         "skillet",
@@ -391,7 +399,7 @@
       "cookbook_slugs": [
         "date-night-velvet-mediterranean-night"
       ],
-      "search_text": "crispy halloumi with hot honey, mint & pistachio salty-crisp halloumi with floral heat and fresh herbs for a bold but effortless first plate. small-plate starter mediterranean starter halloumi quick skillet pistachio - 200 g halloumi, sliced into 8 pieces - 1 tbsp olive oil - 1 tbsp honey - 1/2 tsp chilli flakes - 1 tbsp lemon juice - 60 g baby rocket - 1 tbsp fresh mint, chopped - 20 g pistachios, chopped - freshly cracked black pepper 1. stir honey, chilli flakes, and lemon juice in a small bowl. 2. heat olive oil in a skillet over medium-high heat and sear halloumi for 2-3 minutes per side until deeply golden. 3. spread baby rocket on two plates and top with hot halloumi slices. 4. spoon over the hot honey dressing, then finish with mint, pistachios, and black pepper."
+      "search_text": "crispy halloumi with hot honey, mint & pistachio salty-crisp halloumi with floral heat and fresh herbs for a bold but effortless first plate. small-plate starter mediterranean starter halloumi quick skillet pistachio highly rated - 200 g halloumi, sliced into 8 pieces - 1 tbsp olive oil - 1 tbsp honey - 1/2 tsp chilli flakes - 1 tbsp lemon juice - 60 g baby rocket - 1 tbsp fresh mint, chopped - 20 g pistachios, chopped - freshly cracked black pepper 1. stir honey, chilli flakes, and lemon juice in a small bowl. 2. heat olive oil in a skillet over medium-high heat and sear halloumi for 2-3 minutes per side until deeply golden. 3. spread baby rocket on two plates and top with hot halloumi slices. 4. spoon over the hot honey dressing, then finish with mint, pistachios, and black pepper."
     },
     {
       "id": "403",
@@ -407,6 +415,7 @@
       "cook": "",
       "rest": "30m",
       "difficulty": 1,
+      "rating": 78.0,
       "image": "assets/images/403-espresso-tiramisu-cups-no-alcohol-555f7a74.png",
       "image_alt": "Espresso Tiramisu Cups (No Alcohol)",
       "tags": [
@@ -463,6 +472,7 @@
       "cook": "45m",
       "rest": "",
       "difficulty": null,
+      "rating": null,
       "image": "assets/images/409-ginger-slice-d8daa1ea.png",
       "image_alt": "Ginger Slice",
       "tags": [
@@ -518,11 +528,13 @@
       "cook": "0m",
       "rest": "0m",
       "difficulty": 1,
+      "rating": 95.0,
       "image": "assets/images/410-lychee-ginger-lime-cooler-546eaf69.png",
       "image_alt": "Lychee Ginger Lime Cooler",
       "tags": [
         "drink",
         "ginger",
+        "highly rated",
         "lychee",
         "mocktail",
         "quick",
@@ -559,7 +571,7 @@
       "cookbook_slugs": [
         "date-night-neon-night-market-escape"
       ],
-      "search_text": "lychee ginger lime cooler floral lychee, bright lime, and ginger spice open the night with a crisp bar-style fizz. mocktail drink east-asian-inspired drink mocktail lychee ginger sparkling quick - 1 can lychees in syrup (reserve 80 ml syrup and 6 lychees, plus 2 extra lychees for garnish) - 40 ml fresh lime juice - 20 ml ginger syrup - 6 mint leaves - 240 ml chilled soda water - 2 cup ice - 2 strip lime peel 1. blend 6 lychees with 80 ml syrup, lime juice, and ginger syrup until smooth. 2. strain into a jug, add mint leaves and ice, then stir for 20 seconds to chill. 3. divide between two tall glasses and top with chilled soda water. 4. garnish each glass with one whole lychee and a strip of lime peel. 5. optional cocktail conversion for one serving only: add 30 ml gin or vodka to one glass and stir once."
+      "search_text": "lychee ginger lime cooler floral lychee, bright lime, and ginger spice open the night with a crisp bar-style fizz. mocktail drink east-asian-inspired drink mocktail lychee ginger sparkling quick highly rated - 1 can lychees in syrup (reserve 80 ml syrup and 6 lychees, plus 2 extra lychees for garnish) - 40 ml fresh lime juice - 20 ml ginger syrup - 6 mint leaves - 240 ml chilled soda water - 2 cup ice - 2 strip lime peel 1. blend 6 lychees with 80 ml syrup, lime juice, and ginger syrup until smooth. 2. strain into a jug, add mint leaves and ice, then stir for 20 seconds to chill. 3. divide between two tall glasses and top with chilled soda water. 4. garnish each glass with one whole lychee and a strip of lime peel. 5. optional cocktail conversion for one serving only: add 30 ml gin or vodka to one glass and stir once."
     },
     {
       "id": "415",
@@ -575,6 +587,7 @@
       "cook": "8m",
       "rest": "0m",
       "difficulty": 1,
+      "rating": null,
       "image": "assets/images/415-miso-butter-broccolini-toasted-sesame-almonds-80b48790.png",
       "image_alt": "Miso-Butter Broccolini with Toasted Sesame Almonds",
       "tags": [
@@ -634,6 +647,7 @@
       "cook": "10m",
       "rest": "0m",
       "difficulty": 1,
+      "rating": 81.0,
       "image": "assets/images/411-miso-sesame-mushroom-lettuce-cups-c55bbecc.png",
       "image_alt": "Miso-Sesame Mushroom Lettuce Cups",
       "tags": [
@@ -695,6 +709,7 @@
       "cook": "",
       "rest": "20m",
       "difficulty": 1,
+      "rating": 70.0,
       "image": "assets/images/408-no-bake-lemon-mascarpone-pots-with-pistachio-crunch-2e8c383d.png",
       "image_alt": "No-Bake Lemon Mascarpone Pots with Pistachio Crunch",
       "tags": [
@@ -754,6 +769,7 @@
       "cook": "20m",
       "rest": "3m",
       "difficulty": 2,
+      "rating": null,
       "image": "assets/images/416-one-pan-ginger-miso-chicken-rice-bok-choy-386d46f1.png",
       "image_alt": "One-Pan Ginger Miso Chicken Rice with Bok Choy",
       "tags": [
@@ -817,10 +833,12 @@
       "cook": "18m",
       "rest": "",
       "difficulty": 2,
+      "rating": 87.0,
       "image": "assets/images/407-one-pan-lemon-parmesan-gnocchi-with-spinach-5515a614.png",
       "image_alt": "One-Pan Lemon Parmesan Gnocchi with Spinach",
       "tags": [
         "gnocchi",
+        "highly rated",
         "lemon",
         "main",
         "one-pan"
@@ -862,7 +880,7 @@
       "cookbook_slugs": [
         "date-night-citrus-glow-italian-night"
       ],
-      "search_text": "one-pan lemon parmesan gnocchi with spinach golden pan-seared gnocchi in a silky lemon-parmesan sauce with wilted spinach and crispy sage. gnocchi main italian main gnocchi one-pan lemon - 500 g shelf-stable potato gnocchi - 1 tbsp olive oil - 30 g butter - 8-10 fresh sage leaves - 2 garlic cloves, minced - 1 cup low-sodium vegetable stock - 3/4 cup thickened cream - 1 lemon (zest + 2 tbsp juice) - 1/2 cup finely grated parmesan, plus extra to finish - 2 cups baby spinach - salt and black pepper - optional: pinch of chili flakes 1. heat a large frying pan over medium heat with butter until foamy, add sage leaves, and fry for 30-45 seconds until crisp; transfer leaves to a plate. 2. add olive oil and gnocchi to the same pan and cook for 4-5 minutes, stirring occasionally, until lightly golden. 3. add garlic (and chili flakes if using) and stir for 30 seconds. 4. pour in stock and cream, then simmer for 3-4 minutes until the sauce thickens slightly. 5. stir in lemon zest, lemon juice, parmesan, and spinach; cook for 1-2 minutes until spinach wilts and sauce is glossy. 6. season to taste, divide between bowls, and top with crispy sage, extra parmesan, and black pepper."
+      "search_text": "one-pan lemon parmesan gnocchi with spinach golden pan-seared gnocchi in a silky lemon-parmesan sauce with wilted spinach and crispy sage. gnocchi main italian main gnocchi one-pan lemon highly rated - 500 g shelf-stable potato gnocchi - 1 tbsp olive oil - 30 g butter - 8-10 fresh sage leaves - 2 garlic cloves, minced - 1 cup low-sodium vegetable stock - 3/4 cup thickened cream - 1 lemon (zest + 2 tbsp juice) - 1/2 cup finely grated parmesan, plus extra to finish - 2 cups baby spinach - salt and black pepper - optional: pinch of chili flakes 1. heat a large frying pan over medium heat with butter until foamy, add sage leaves, and fry for 30-45 seconds until crisp; transfer leaves to a plate. 2. add olive oil and gnocchi to the same pan and cook for 4-5 minutes, stirring occasionally, until lightly golden. 3. add garlic (and chili flakes if using) and stir for 30 seconds. 4. pour in stock and cream, then simmer for 3-4 minutes until the sauce thickens slightly. 5. stir in lemon zest, lemon juice, parmesan, and spinach; cook for 1-2 minutes until spinach wilts and sauce is glossy. 6. season to taste, divide between bowls, and top with crispy sage, extra parmesan, and black pepper."
     },
     {
       "id": "307",
@@ -878,9 +896,11 @@
       "cook": "18m",
       "rest": "2m",
       "difficulty": 2,
+      "rating": 86.0,
       "image": "assets/images/307-one-pan-saffron-prawn-orzo-with-spinach-447f7c31.png",
       "image_alt": "One-Pan Saffron Prawn Orzo with Spinach",
       "tags": [
+        "highly rated",
         "main",
         "one-pan",
         "orzo",
@@ -925,7 +945,7 @@
       "cookbook_slugs": [
         "date-night-velvet-mediterranean-night"
       ],
-      "search_text": "one-pan saffron prawn orzo with spinach golden saffron orzo with tender prawns and greens delivers a luxe one-pan centerplate with minimal cleanup. one-pan main mediterranean main one-pan prawns orzo quick - 1 tbsp olive oil - 2 garlic cloves, minced - 180 g orzo - 300 ml vegetable stock - 200 ml water - 1 pinch saffron threads - 250 g raw prawns, peeled and deveined - 120 g cherry tomatoes, halved - 60 g baby spinach - 40 g parmesan, finely grated - 1 tbsp lemon juice - 1 tbsp fresh parsley, chopped - freshly cracked black pepper 1. warm the stock with saffron in a small pot for 2 minutes, then keep it hot. 2. heat olive oil in a deep skillet over medium heat and cook garlic for 30 seconds. 3. add orzo and stir for 1 minute, then pour in saffron stock and water. 4. simmer for 10 minutes, stirring occasionally, until the orzo is almost tender. 5. add prawns and cherry tomatoes, cook for 3-4 minutes until prawns turn pink, then fold in spinach. 6. turn off heat, stir in parmesan and lemon juice, rest for 2 minutes, then plate with parsley and black pepper."
+      "search_text": "one-pan saffron prawn orzo with spinach golden saffron orzo with tender prawns and greens delivers a luxe one-pan centerplate with minimal cleanup. one-pan main mediterranean main one-pan prawns orzo quick highly rated - 1 tbsp olive oil - 2 garlic cloves, minced - 180 g orzo - 300 ml vegetable stock - 200 ml water - 1 pinch saffron threads - 250 g raw prawns, peeled and deveined - 120 g cherry tomatoes, halved - 60 g baby spinach - 40 g parmesan, finely grated - 1 tbsp lemon juice - 1 tbsp fresh parsley, chopped - freshly cracked black pepper 1. warm the stock with saffron in a small pot for 2 minutes, then keep it hot. 2. heat olive oil in a deep skillet over medium heat and cook garlic for 30 seconds. 3. add orzo and stir for 1 minute, then pour in saffron stock and water. 4. simmer for 10 minutes, stirring occasionally, until the orzo is almost tender. 5. add prawns and cherry tomatoes, cook for 3-4 minutes until prawns turn pink, then fold in spinach. 6. turn off heat, stir in parmesan and lemon juice, rest for 2 minutes, then plate with parsley and black pepper."
     },
     {
       "id": "412",
@@ -941,6 +961,7 @@
       "cook": "16m",
       "rest": "2m",
       "difficulty": 2,
+      "rating": 80.0,
       "image": "assets/images/412-one-pan-soy-honey-chicken-udon-with-broccolini-404d810e.png",
       "image_alt": "One-Pan Soy-Honey Chicken Udon with Broccolini",
       "tags": [
@@ -1005,6 +1026,7 @@
       "cook": "0m",
       "rest": "0m",
       "difficulty": 1,
+      "rating": null,
       "image": "assets/images/414-pear-ginger-yuzu-soda-cd248ece.png",
       "image_alt": "Pear, Ginger & Yuzu Soda",
       "tags": [
@@ -1062,6 +1084,7 @@
       "cook": "",
       "rest": "",
       "difficulty": 1,
+      "rating": null,
       "image": "assets/images/404-pink-grapefruit-thyme-ginger-spritz-2d531391.png",
       "image_alt": "Pink Grapefruit, Thyme & Ginger Spritz",
       "tags": [
@@ -1118,6 +1141,7 @@
       "cook": "0m",
       "rest": "0m",
       "difficulty": 1,
+      "rating": 79.0,
       "image": "assets/images/305-rosemary-blackberry-verjus-fizz-1e47295d.png",
       "image_alt": "Rosemary Blackberry Verjus Fizz",
       "tags": [
@@ -1177,6 +1201,7 @@
       "cook": "",
       "rest": "",
       "difficulty": 1,
+      "rating": 69.0,
       "image": "assets/images/405-sparkling-basil-limonata-eb77901e.png",
       "image_alt": "Sparkling Basil Limonata",
       "tags": [
@@ -1233,11 +1258,13 @@
       "cook": "15m",
       "rest": "5m",
       "difficulty": 1,
+      "rating": 94.0,
       "image": "assets/images/413-toasted-coconut-mango-rice-cups-df103684.png",
       "image_alt": "Toasted Coconut Mango Rice Cups",
       "tags": [
         "coconut",
         "dessert",
+        "highly rated",
         "mango",
         "quick",
         "rice"
@@ -1275,7 +1302,7 @@
       "cookbook_slugs": [
         "date-night-neon-night-market-escape"
       ],
-      "search_text": "toasted coconut mango rice cups creamy coconut rice with bright mango and toasted coconut lands as a warm-cool tropical dessert with elegant texture. sweet dessert southeast-asian-inspired dessert coconut mango rice quick - 250 g microwave jasmine rice - 200 ml coconut cream - 2 tbsp caster sugar - 0.25 tsp sea salt - 1 ripe mango, diced - 1 tsp lime zest - 1 tbsp lime juice - 2 tbsp toasted coconut flakes - 1 tsp toasted sesame seeds 1. add jasmine rice, coconut cream, caster sugar, and sea salt to a small saucepan over medium heat. 2. cook for 6-8 minutes, stirring often, until thick, glossy, and spoonable. 3. toss mango with lime zest and lime juice in a small bowl. 4. divide warm coconut rice between two glasses or bowls, then top with mango. 5. finish with toasted coconut flakes and toasted sesame seeds, then rest for 5 minutes before serving."
+      "search_text": "toasted coconut mango rice cups creamy coconut rice with bright mango and toasted coconut lands as a warm-cool tropical dessert with elegant texture. sweet dessert southeast-asian-inspired dessert coconut mango rice quick highly rated - 250 g microwave jasmine rice - 200 ml coconut cream - 2 tbsp caster sugar - 0.25 tsp sea salt - 1 ripe mango, diced - 1 tsp lime zest - 1 tbsp lime juice - 2 tbsp toasted coconut flakes - 1 tsp toasted sesame seeds 1. add jasmine rice, coconut cream, caster sugar, and sea salt to a small saucepan over medium heat. 2. cook for 6-8 minutes, stirring often, until thick, glossy, and spoonable. 3. toss mango with lime zest and lime juice in a small bowl. 4. divide warm coconut rice between two glasses or bowls, then top with mango. 5. finish with toasted coconut flakes and toasted sesame seeds, then rest for 5 minutes before serving."
     },
     {
       "id": "401",
@@ -1291,6 +1318,7 @@
       "cook": "5m",
       "rest": "",
       "difficulty": 1,
+      "rating": 76.0,
       "image": "assets/images/401-warm-beetroot-goats-cheese-orange-walnut-salad-e29ca2a4.png",
       "image_alt": "Warm Beetroot, Goat's Cheese, Orange & Walnut Salad",
       "tags": [
@@ -1352,6 +1380,7 @@
       "cook": "12m",
       "rest": "0m",
       "difficulty": 1,
+      "rating": 45.0,
       "image": "assets/images/308-warm-honeyed-pears-with-vanilla-ricotta-and-walnut-crunch-ade4a700.png",
       "image_alt": "Warm Honeyed Pears with Vanilla Ricotta & Walnut Crunch",
       "tags": [
@@ -1411,11 +1440,13 @@
       "cook": "8m",
       "rest": "",
       "difficulty": 1,
+      "rating": 93.0,
       "image": "assets/images/406-whipped-feta-artichoke-toasts-with-lemon-8dbcf10e.png",
       "image_alt": "Whipped Feta Artichoke Toasts with Lemon",
       "tags": [
         "artichoke",
         "feta",
+        "highly rated",
         "quick",
         "starter"
       ],
@@ -1453,7 +1484,7 @@
       "cookbook_slugs": [
         "date-night-citrus-glow-italian-night"
       ],
-      "search_text": "whipped feta artichoke toasts with lemon creamy whipped feta and warm lemony artichokes on crisp toast for a savory first bite. toast starter mediterranean starter feta artichoke quick - 120 g feta - 80 g ricotta - 1 tsp lemon zest - 1 tbsp lemon juice - 1 small garlic clove, finely grated - 1 tbsp olive oil, plus extra to drizzle - 1 cup jarred artichoke hearts, drained and chopped - 1 tbsp chopped parsley or basil - 4 slices sourdough - freshly cracked black pepper 1. toast the sourdough slices until golden and crisp. 2. in a bowl, mash feta, ricotta, lemon zest, and half the lemon juice until creamy and spreadable. 3. warm olive oil in a small pan over medium heat, then cook artichokes with garlic for 2-3 minutes. 4. add remaining lemon juice and parsley, toss for 30 seconds, then turn off the heat. 5. spread whipped feta on the toasts, spoon warm artichokes over the top, and finish with black pepper and a light olive oil drizzle."
+      "search_text": "whipped feta artichoke toasts with lemon creamy whipped feta and warm lemony artichokes on crisp toast for a savory first bite. toast starter mediterranean starter feta artichoke quick highly rated - 120 g feta - 80 g ricotta - 1 tsp lemon zest - 1 tbsp lemon juice - 1 small garlic clove, finely grated - 1 tbsp olive oil, plus extra to drizzle - 1 cup jarred artichoke hearts, drained and chopped - 1 tbsp chopped parsley or basil - 4 slices sourdough - freshly cracked black pepper 1. toast the sourdough slices until golden and crisp. 2. in a bowl, mash feta, ricotta, lemon zest, and half the lemon juice until creamy and spreadable. 3. warm olive oil in a small pan over medium heat, then cook artichokes with garlic for 2-3 minutes. 4. add remaining lemon juice and parsley, toss for 30 seconds, then turn off the heat. 5. spread whipped feta on the toasts, spoon warm artichokes over the top, and finish with black pepper and a light olive oil drizzle."
     }
   ],
   "cookbooks": [
@@ -1537,9 +1568,9 @@
       "slug": "date-night-citrus-glow-italian-night",
       "title": "Date Night: Citrus Glow Italian Night",
       "subtitle": "Saturday, February 14, 2026 · Low-effort Italian-inspired menu with bright lemon, herbs, and creamy finishes",
-      "author": "Codex",
+      "author": "",
       "date": "2026-02-14",
-      "source_mtime": 1771995152,
+      "source_mtime": 1772404441,
       "description": "",
       "album_title": "Bossa Antigua",
       "album_artist": "Paul Desmond",
@@ -1575,14 +1606,14 @@
       "slug": "date-night-lantern-coast-supper",
       "title": "Date Night: Lantern Coast Supper",
       "subtitle": "Saturday, March 7, 2026 · Bright, low-effort late-summer East-Asian-inspired menu with crisp citrus, glossy umami, and tropical finish",
-      "author": "Codex",
+      "author": "",
       "date": "2026-03-07",
-      "source_mtime": 1772402370,
+      "source_mtime": 1772418899,
       "description": "",
       "album_title": "Midnight Sugar",
       "album_artist": "Tsuyoshi Yamamoto Trio",
       "album_style": "Instrumental jazz (intimate Japanese piano trio, warm late-night feel)",
-      "album_youtube_url": "",
+      "album_youtube_url": "https://www.youtube.com/watch?v=qocG8v1rToc",
       "recipe_slugs": [
         "recipe-414-pear-ginger-yuzu-soda",
         "recipe-415-miso-butter-broccolini-with-toasted-sesame-almonds",
@@ -1613,9 +1644,9 @@
       "slug": "date-night-neon-night-market-escape",
       "title": "Date Night: Neon Night Market Escape",
       "subtitle": "Tuesday, February 24, 2026 · A fresh night-market-inspired menu with bright acidity, deep umami, and tropical finish",
-      "author": "Codex",
+      "author": "",
       "date": "2026-02-24",
-      "source_mtime": 1771995152,
+      "source_mtime": 1772404432,
       "description": "",
       "album_title": "Scenery",
       "album_artist": "Ryo Fukui",
@@ -1651,9 +1682,9 @@
       "slug": "date-night-velvet-mediterranean-night",
       "title": "Date Night: Velvet Mediterranean Night",
       "subtitle": "Saturday, February 21, 2026 · Low-effort Mediterranean date-night menu with bright herbs, warm spice, and silky textures",
-      "author": "Codex",
+      "author": "",
       "date": "2026-02-21",
-      "source_mtime": 1771995152,
+      "source_mtime": 1772404437,
       "description": "",
       "album_title": "Waltz for Debby",
       "album_artist": "Bill Evans Trio",
@@ -1712,6 +1743,7 @@
       "halloumi",
       "handwritten",
       "heirloom",
+      "highly rated",
       "lemon",
       "lettuce-cups",
       "lime",
