@@ -932,7 +932,7 @@ const renderRecipeDetail = () => {
             </button>
           </div>
         </div>
-        <div class="vc-modal-head">
+      <div class="vc-modal-head">
           <div class="vc-modal-title-wrap">
             <h2>${escapeHtml(recipe.title)}</h2>
             ${recipe.menu ? `<p class="vc-lede">${escapeHtml(recipe.menu)}</p>` : ""}
@@ -940,18 +940,18 @@ const renderRecipeDetail = () => {
         </div>
       </header>
       ${renderRecipeHero(recipe)}
-      <div class="vc-meta-row">
+      <div class="vc-meta-row vc-recipe-meta-row">
         ${recipe.serves ? `<span class="vc-pill">Serves ${escapeHtml(recipe.serves)}</span>` : ""}
         ${recipe.prep ? `<span class="vc-pill">Prep ${escapeHtml(recipe.prep)}</span>` : ""}
         ${recipe.cook ? `<span class="vc-pill">Cook ${escapeHtml(recipe.cook)}</span>` : ""}
         ${recipe.rest ? `<span class="vc-pill">Rest ${escapeHtml(recipe.rest)}</span>` : ""}
       </div>
       <div class="vc-detail-grid">
-        <section>
+        <section class="vc-detail-panel vc-detail-panel-ingredients">
           <h3>Ingredients</h3>
           ${recipe.sections.ingredients_html || "<p>No ingredients section found.</p>"}
         </section>
-        <section>
+        <section class="vc-detail-panel vc-detail-panel-method">
           <h3>Method</h3>
           ${recipe.sections.method_html || "<p>No method section found.</p>"}
           ${recipe.sections.notes_html ? `<h3>Notes</h3>${recipe.sections.notes_html}` : ""}
@@ -1106,10 +1106,10 @@ const renderCookbookFullscreen = () => {
         <div class="vc-cookbook-heading">
           <h2>${escapeHtml(cookbook.title)}</h2>
           ${cookbook.subtitle ? `<p class="vc-lede">${escapeHtml(cookbook.subtitle)}</p>` : ""}
-          <div class="vc-meta-row">
+          <div class="vc-meta-row vc-cookbook-meta-row">
             ${cookbook.author ? `<span class="vc-pill">${escapeHtml(cookbook.author)}</span>` : ""}
             ${cookbook.date ? `<span class="vc-pill">${escapeHtml(cookbook.date)}</span>` : ""}
-            <span class="vc-pill">${cookbook.recipe_slugs.length} recipes</span>
+            <span class="vc-pill vc-cookbook-count">${cookbook.recipe_slugs.length} recipes</span>
           </div>
         </div>
         <button
@@ -1131,7 +1131,7 @@ const renderCookbookFullscreen = () => {
         <aside class="vc-cookbook-rail" aria-label="Cookbook navigation">
           <div class="vc-cookbook-rail-inner" id="vc-cookbook-menu">
             <div class="vc-cookbook-menu-actions">
-              <button class="vc-back-btn vc-back-btn-menu" type="button" data-back-library aria-label="Back to cookbooks" title="Back to cookbooks">&larr;</button>
+              <button class="vc-back-btn vc-back-btn-menu" type="button" data-back-library aria-label="Back to cookbooks" title="Back to cookbooks">&larr; Cookbooks</button>
             </div>
             <section class="vc-nav-panel vc-nav-panel-inline">
               <h2 class="vc-nav-title">Contents</h2>

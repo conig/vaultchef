@@ -47,6 +47,8 @@ def test_webapp_script_includes_routes_and_morph() -> None:
     assert "vc-image-fallback" in text
     assert "vc-recipe-visual-column" in text
     assert "vc-section-panel" in text
+    assert "vc-recipe-meta-row" in text
+    assert "vc-cookbook-meta-row" in text
 
 
 # Purpose: verify web app css preserves mobile tap target sizing.
@@ -68,6 +70,8 @@ def test_webapp_css_tap_targets() -> None:
     assert "will-change: transform" in text
     assert ".vc-recipe-visual-column" in text
     assert ".vc-section-panel" in text
+    assert "--vc-focus-ring" in text
+    assert ".vc-cookbook-meta-row" in text
 
 
 # Purpose: verify pure interaction helpers classify taps vs scroll gestures correctly.
